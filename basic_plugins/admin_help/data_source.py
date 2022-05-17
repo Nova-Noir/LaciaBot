@@ -73,8 +73,7 @@ def _create_help_image():
             logger.warning(f"获取管理插件 {matcher.plugin_name}: {plugin_name} 设置失败...")
     help_str = "*  注: ‘*’ 代表可有多个相同参数 ‘?’ 代表可省略该参数  *\n\n" \
                "[权限等级] 管理员帮助：\n\n"
-    x = list(_plugin_level.keys())
-    x.sort()
+    x = sorted(_plugin_level.keys())
     for level in x:
         for help_ in _plugin_level[level]:
             help_str += f"\t{help_}\n\n"

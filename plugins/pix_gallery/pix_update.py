@@ -69,11 +69,9 @@ async def _(arg: Message = CommandArg()):
         else:
             await start_update.finish("参数错误...第二参数必须为数字")
     if num < 10000:
-        keyword_str = "，".join(
-            _keyword[: num if num < len(_keyword) else len(_keyword)]
-        )
-        uid_str = "，".join(_uid[: num if num < len(_uid) else len(_uid)])
-        pid_str = "，".join(_pid[: num if num < len(_pid) else len(_pid)])
+        keyword_str = "，".join(_keyword[:min(num, len(_keyword))])
+        uid_str = "，".join(_uid[:min(num, len(_uid))])
+        pid_str = "，".join(_pid[:min(num, len(_pid))])
         if msg.lower() == "pid":
             update_lst = _pid
             info = f"开始更新Pixiv搜图PID：\n{pid_str}"
@@ -86,14 +84,13 @@ async def _(arg: Message = CommandArg()):
         else:
             update_lst = _pass_keyword
             info = f"开始更新Pixiv搜图关键词：\n{keyword_str}\n更新UID：{uid_str}\n更新PID：{pid_str}"
-        num = num if num < len(update_lst) else len(update_lst)
+        num = min(num, len(update_lst))
+    elif msg.lower() == "pid":
+        update_lst = [f"pid:{num}"]
+        info = f"开始更新Pixiv搜图UID：\npid:{num}"
     else:
-        if msg.lower() == "pid":
-            update_lst = [f"pid:{num}"]
-            info = f"开始更新Pixiv搜图UID：\npid:{num}"
-        else:
-            update_lst = [f"uid:{num}"]
-            info = f"开始更新Pixiv搜图UID：\nuid:{num}"
+        update_lst = [f"uid:{num}"]
+        info = f"开始更新Pixiv搜图UID：\nuid:{num}"
     await start_update.send(info)
     start_time = time.time()
     pid_count, pic_count = await start_update_image_url(update_lst[:num], black_pid)
@@ -107,9 +104,7 @@ async def _(arg: Message = CommandArg()):
 @check_not_update_uid_pid.handle()
 async def _(arg: Message = CommandArg()):
     msg = arg.extract_plain_text().strip()
-    flag = False
-    if msg == "update":
-        flag = True
+    flag = msg == "update"
     _pass_keyword, _ = await PixivKeywordUser.get_current_keyword()
     x_uid = []
     x_pid = []

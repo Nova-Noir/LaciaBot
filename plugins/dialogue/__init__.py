@@ -63,12 +63,10 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     img_msg = _text("")
     for img in get_message_img(event.json()):
         img_msg += image(img)
-    if not text and not img_msg:
-        await dialogue.send("请发送[滴滴滴]+您要说的内容~", at_sender=True)
-    else:
-        group_id = 0
+    if text or img_msg:
         group_name = "None"
         nickname = event.sender.nickname
+        group_id = 0
         if isinstance(event, GroupMessageEvent):
             group_id = event.group_id
             group_name = (await bot.get_group_info(group_id=event.group_id))[
@@ -89,7 +87,7 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
         await dialogue.send(
             _text(f"您的话已发送至管理员！\n======\n{text}") + img_msg, at_sender=True
         )
-        nickname = event.sender.nickname if event.sender.nickname else event.sender.card
+        nickname = event.sender.nickname or event.sender.card
         dialogue_data[len(dialogue_data)] = {
             "nickname": nickname,
             "user_id": event.user_id,
@@ -99,6 +97,9 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
         }
         # print(dialogue_data)
         logger.info(f"Q{event.user_id}@群{group_id} 联系管理员：text:{text}")
+
+    else:
+        await dialogue.send("请发送[滴滴滴]+您要说的内容~", at_sender=True)
 
 
 @reply.handle()
@@ -155,13 +156,12 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
         else:
             await bot.send_group_msg(group_id=group_id, message=text)
         await reply.finish("消息发送成功...", at_sender=True)
+    elif user_id in [qq["user_id"] for qq in await bot.get_friend_list()]:
+        await bot.send_private_msg(
+            user_id=user_id, message="管理员回复\n=======\n" + text
+        )
+        await reply.finish("发送成功", at_sender=True)
     else:
-        if user_id in [qq["user_id"] for qq in await bot.get_friend_list()]:
-            await bot.send_private_msg(
-                user_id=user_id, message="管理员回复\n=======\n" + text
-            )
-            await reply.finish("发送成功", at_sender=True)
-        else:
-            await reply.send(
-                f"对象不是{list(bot.config.nickname)[0]}的好友...", at_sender=True
-            )
+        await reply.send(
+            f"对象不是{list(bot.config.nickname)[0]}的好友...", at_sender=True
+        )

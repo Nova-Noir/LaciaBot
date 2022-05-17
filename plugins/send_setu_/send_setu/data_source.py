@@ -42,27 +42,26 @@ async def get_setu_urls(
             )
             if response.status_code == 200:
                 data = response.json()
-                if not data["error"]:
-                    data = data["data"]
-                    (
-                        urls,
-                        text_list,
-                        add_databases_list,
-                    ) = await asyncio.get_event_loop().run_in_executor(
-                        None, _setu_data_process, data, command
-                    )
-                    num = num if num < len(data) else len(data)
-                    random_idx = random.sample(range(len(data)), num)
-                    x_urls = []
-                    x_text_lst = []
-                    for x in random_idx:
-                        x_urls.append(urls[x])
-                        x_text_lst.append(text_list[x])
-                    if not x_urls:
-                        return ["没找到符合条件的色图..."], [], [], 401
-                    return x_urls, x_text_lst, add_databases_list, 200
-                else:
+                if data["error"]:
                     return ["没找到符合条件的色图..."], [], [], 401
+                data = data["data"]
+                (
+                    urls,
+                    text_list,
+                    add_databases_list,
+                ) = await asyncio.get_event_loop().run_in_executor(
+                    None, _setu_data_process, data, command
+                )
+                num = min(num, len(data))
+                random_idx = random.sample(range(len(data)), num)
+                x_urls = []
+                x_text_lst = []
+                for x in random_idx:
+                    x_urls.append(urls[x])
+                    x_text_lst.append(text_list[x])
+                if not x_urls:
+                    return ["没找到符合条件的色图..."], [], [], 401
+                return x_urls, x_text_lst, add_databases_list, 200
         except TimeoutError:
             pass
         except Exception as e:
@@ -86,8 +85,7 @@ async def search_online_setu(
     :param id_: 本地id
     :param path_: 存储路径
     """
-    ws_url = Config.get_config("pixiv", "PIXIV_NGINX_URL")
-    if ws_url:
+    if ws_url := Config.get_config("pixiv", "PIXIV_NGINX_URL"):
         url_ = url_.replace("i.pximg.net", ws_url).replace("i.pixiv.cat", ws_url)
     index = random.randint(1, 100000) if id_ is None else id_
     path_ = IMAGE_PATH / path_ if path_ else TEMP_PATH
@@ -102,14 +100,12 @@ async def search_online_setu(
                 timeout=Config.get_config("send_setu", "TIMEOUT"),
             ):
                 continue
-            if id_ is not None:
-                if (
-                    os.path.getsize(path_ / f"{index}.jpg")
-                    > 1024 * 1024 * 1.5
-                ):
-                    compressed_image(
-                        path_ / f"{index}.jpg",
-                    )
+            if id_ is not None and (
+                os.path.getsize(path_ / f"{index}.jpg") > 1024 * 1024 * 1.5
+            ):
+                compressed_image(
+                    path_ / f"{index}.jpg",
+                )
             logger.info(f"下载 lolicon 图片 {url_} 成功， id：{index}")
             return image(path_ / file_name), index
         except TimeoutError:
@@ -249,12 +245,9 @@ def _setu_data_process(data: dict, command: str) -> "list, list, list":
         pid = data[i]["pid"]
         urls.append(img_url)
         text_list.append(f"title：{title}\nauthor：{author}\nPID：{pid}")
-        tags = []
-        for j in range(len(data[i]["tags"])):
-            tags.append(data[i]["tags"][j])
-        if command != "色图r":
-            if "R-18" in tags:
-                tags.remove("R-18")
+        tags = [data[i]["tags"][j] for j in range(len(data[i]["tags"]))]
+        if command != "色图r" and "R-18" in tags:
+            tags.remove("R-18")
         add_databases_list.append(
             (
                 title,

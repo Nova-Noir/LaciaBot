@@ -60,13 +60,13 @@ async def update_simple_info(url: str, game_name: str) -> Tuple[dict, int]:
 def get_char_divs(soup: bs4.BeautifulSoup, game_name: str) -> bs4.element.ResultSet:
     # if game_name == "pcr":
     #     return soup.find_all("div", {"class": "tabbertab"})
-    if game_name in ["azur", "pcr"]:
+    if game_name in {"azur", "pcr"}:
         return soup.find_all("div", {"class": "resp-tabs"})
 
 
 # 拿到所有类型
 def get_type_lst(div: bs4.element.Tag, game_name: str):
-    if game_name in ["pcr", "azur"]:
+    if game_name in {"pcr", "azur"}:
         return div.find("div", {"class": "resp-tabs-container"}).find_all(
             "div", {"class": "resp-tab-content"}
         )
@@ -76,10 +76,10 @@ def get_type_lst(div: bs4.element.Tag, game_name: str):
 def get_char_lst_contents(char_lst: bs4.element.Tag, game_name: str):
     contents = []
     # print(len(char_lst.find_all('tr')))
-    if game_name == "pcr":
-        contents = char_lst.contents
     if game_name == "azur":
         contents = char_lst.find("table").find("tbody").contents[-1].find("td").contents
+    elif game_name == "pcr":
+        contents = char_lst.contents
     return [x for x in contents if x != "\n"]
 
 
@@ -101,14 +101,14 @@ async def _last_check(
         ]:
             await download_img(url, "azur", f"{idx}_star")
             idx += 1
-        tasks = []
         semaphore = asyncio.Semaphore(draw_config.SEMAPHORE)
-        for key in data.keys():
-            tasks.append(
-                asyncio.ensure_future(
-                    _async_update_azur_extra_info(key, semaphore)
-                )
+        tasks = [
+            asyncio.ensure_future(
+                _async_update_azur_extra_info(key, semaphore)
             )
+            for key in data
+        ]
+
         result = await asyncio.gather(*tasks)
         for x in result:
             for key in x.keys():
@@ -207,9 +207,9 @@ async def _async_update_azur_extra_info(
                         )
                     )
                     x = {key: {"获取途径": []}}
-                    if construction_time.find("无法建造") != -1:
+                    if "无法建造" in construction_time:
                         x[key]["获取途径"].append("无法建造")
-                    elif construction_time.find("活动已关闭") != -1:
+                    elif "活动已关闭" in construction_time:
                         x[key]["获取途径"].append("活动限定")
                     else:
                         x[key]["获取途径"].append("可以建造")

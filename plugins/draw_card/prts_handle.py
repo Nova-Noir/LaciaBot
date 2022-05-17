@@ -37,14 +37,13 @@ async def prts_draw(count: int = 300):
     tmp = ''
     if _CURRENT_POOL_TITLE:
         for x in UP_OPERATOR:
-            for operator in x.operators:
-                up_list.append(operator)
-            if x.star == 6:
-                tmp += f'六星UP：{" ".join(x.operators)} \n'
+            up_list.extend(iter(x.operators))
+            if x.star == 4:
+                tmp += f'四星UP：{" ".join(x.operators)}'
             elif x.star == 5:
                 tmp += f'五星UP：{" ".join(x.operators)} \n'
-            elif x.star == 4:
-                tmp += f'四星UP：{" ".join(x.operators)}'
+            elif x.star == 6:
+                tmp += f'六星UP：{" ".join(x.operators)} \n'
     rst = init_star_rst(star_list, cnlist, six_list, six_index_list, up_list)
     if count > 90:
         operator_list = set_list(operator_list)
@@ -91,7 +90,7 @@ def _get_operator_card(add: float):
         up_operator_name = ""
         # UPs
         try:
-            if 0 < zoom:
+            if zoom > 0:
                 up_operators = [x.operators for x in UP_OPERATOR if x.star == star and x.zoom < 1][0]
                 up_operator_name = random.choice(up_operators)
                 acquire_operator = [x for x in ALL_OPERATOR if x.name == up_operator_name][0]
@@ -157,12 +156,9 @@ async def _init_up_char():
                 average_dict[star][up_char_dict[star][key]].append(key)
             else:
                 average_dict[star][up_char_dict[star][key]] = [key]
-    for star in average_dict.keys():
+    for star in average_dict:
         for str_zoom in average_dict[star].keys():
-            if str_zoom[0] == '权':
-                zoom = float(str_zoom[1:])
-            else:
-                zoom = float(str_zoom) / 100
+            zoom = float(str_zoom[1:]) if str_zoom[0] == '权' else float(str_zoom) / 100
             UP_OPERATOR.append(UpEvent(star=int(star), operators=average_dict[star][str_zoom], zoom=zoom))
 
 

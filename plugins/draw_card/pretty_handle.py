@@ -32,10 +32,7 @@ class PrettyChar(BaseData):
 
 
 async def pretty_draw(count: int, pool_name):
-    if pool_name == 'card':
-        cnlist = ['SSR', 'SR', 'R']
-    else:
-        cnlist = ['★★★', '★★', '★']
+    cnlist = ['SSR', 'SR', 'R'] if pool_name == 'card' else ['★★★', '★★', '★']
     star_list = [0, 0, 0]
     obj_list, obj_dict, three_list, star_list, three_olist = format_card_information(count, star_list,
                                                                                      _get_pretty_card, pool_name)
@@ -51,23 +48,32 @@ async def pretty_draw(count: int, pool_name):
     tmp = ''
     if up_type:
         for x in up_type:
-            for operator in x.operators:
-                up_list.append(operator.split(']')[1] if pool_name == 'char' else operator)
-            if x.star == 3:
-                if pool_name == 'char':
-                    tmp += f'三星UP：{" ".join(x.operators)} \n'
-                else:
-                    tmp += f'SSR UP：{" ".join(x.operators)} \n'
+            up_list.extend(
+                operator.split(']')[1] if pool_name == 'char' else operator
+                for operator in x.operators
+            )
+
+            if x.star == 1:
+                tmp += (
+                    f'一星UP：{" ".join(x.operators)} '
+                    if pool_name == 'char'
+                    else f'R UP：{" ".join(x.operators)} '
+                )
+
             elif x.star == 2:
-                if pool_name == 'char':
-                    tmp += f'二星UP：{" ".join(x.operators)} \n'
-                else:
-                    tmp += f'SR UP：{" ".join(x.operators)} \n'
-            elif x.star == 1:
-                if pool_name == 'char':
-                    tmp += f'一星UP：{" ".join(x.operators)} '
-                else:
-                    tmp += f'R UP：{" ".join(x.operators)} '
+                tmp += (
+                    f'二星UP：{" ".join(x.operators)} \n'
+                    if pool_name == 'char'
+                    else f'SR UP：{" ".join(x.operators)} \n'
+                )
+
+            elif x.star == 3:
+                tmp += (
+                    f'三星UP：{" ".join(x.operators)} \n'
+                    if pool_name == 'char'
+                    else f'SSR UP：{" ".join(x.operators)} \n'
+                )
+
     tmp = tmp[:-1] if tmp and tmp[-1] == '\n' else tmp
     pool_info = f'当前up池：{title}\n{tmp}' if title else ''
     rst = init_star_rst(star_list, cnlist, three_list, three_olist, up_list)

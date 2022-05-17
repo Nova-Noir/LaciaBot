@@ -21,9 +21,6 @@ def is_switch(game_name: str) -> Rule:
             return draw_config.AZUR_FLAG
         if game_name == 'fgo':
             return draw_config.FGO_FLAG
-        if game_name == 'onmyoji':
-            return draw_config.ONMYOJI_FLAG
-        else:
-            return False
+        return draw_config.ONMYOJI_FLAG if game_name == 'onmyoji' else False
 
     return Rule(_is_switch)

@@ -70,7 +70,7 @@ __plugin_settings__ = {
 }
 __plugin_task__ = {"open_case_reset_remind": "每日开箱重置提醒"}
 __plugin_cd_limit__ = {"rst": "着什么急啊，慢慢来！"}
-__plugin_resources__ = {f"cases": IMAGE_PATH}
+__plugin_resources__ = {"cases": IMAGE_PATH}
 __plugin_configs__ = {
     "INITIAL_OPEN_CASE_COUNT": {"value": 20, "help": "初始每日开箱次数", "default_value": 20},
     "EACH_IMPRESSION_ADD_COUNT": {
@@ -104,8 +104,7 @@ k_open_case = cases_matcher_group.on_command("开箱")
 @k_open_case.handle()
 async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
     case_name = arg.extract_plain_text().strip()
-    case_name = case_name.replace("武器箱", "").strip()
-    if case_name:
+    if case_name := case_name.replace("武器箱", "").strip():
         result = await open_case(event.user_id, event.group_id, case_name)
     else:
         result = await open_case(

@@ -101,11 +101,12 @@ rank_dict = {
 
 pixiv_rank = on_command(
     "p站排行",
-    aliases={"P站排行榜", "p站排行榜", "P站排行榜", "P站排行"},
+    aliases={"p站排行榜", "P站排行榜", "P站排行"},
     priority=5,
     block=True,
     rule=to_me(),
 )
+
 pixiv_keyword = on_command("搜图", priority=5, block=True, rule=to_me())
 
 
@@ -118,9 +119,8 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     info_list = []
     if not msg:
         msg = ["1"]
-    if msg[0] in ["6", "7", "8", "9"]:
-        if event.message_type == "group":
-            await pixiv_rank.finish("羞羞脸！私聊里自己看！", at_sender=True)
+    if msg[0] in ["6", "7", "8", "9"] and event.message_type == "group":
+        await pixiv_rank.finish("羞羞脸！私聊里自己看！", at_sender=True)
     if (n := len(msg)) == 0 or msg[0] == "":
         info_list, code = await get_pixiv_urls(rank_dict.get("1"))
     elif n == 1:
@@ -151,18 +151,15 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
 @pixiv_keyword.handle()
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     msg = arg.extract_plain_text().strip()
-    if isinstance(event, GroupMessageEvent):
-        if "r18" in msg.lower():
-            await pixiv_keyword.finish("(脸红#) 你不会害羞的 八嘎！", at_sender=True)
+    if isinstance(event, GroupMessageEvent) and "r18" in msg.lower():
+        await pixiv_keyword.finish("(脸红#) 你不会害羞的 八嘎！", at_sender=True)
     r18 = 0 if "r18" in msg else 1
     msg = msg.replace("r18", "").strip().split()
     msg = [m.strip() for m in msg if m]
-    keyword = None
     info_list = None
     num = 10
     page = 1
-    if (n := len(msg)) == 1:
-        keyword = msg[0]
+    keyword = msg[0] if (n := len(msg)) == 1 else None
     if n > 1:
         if not is_number(msg[1]):
             await pixiv_keyword.finish("图片数量必须是数字！", at_sender=True)

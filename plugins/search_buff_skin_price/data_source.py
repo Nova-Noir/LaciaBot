@@ -23,29 +23,28 @@ async def get_price(d_name: str) -> "str, int":
             params=parameter,
             cookies=cookie,
         )
-        if response.status_code == 200:
-            try:
-                if response.text.find("Login Required") != -1:
-                    return "BUFF登录被重置，请联系管理员重新登入", 996
-                data = response.json()["data"]
-                total_page = data["total_page"]
-                data = data["items"]
-                for _ in range(total_page):
-                    for i in range(len(data)):
-                        name = data[i]["name"]
-                        price = data[i]["sell_reference_price"]
-                        name_list.append(name)
-                        price_list.append(price)
-            except Exception as e:
-                logger.error(f"BUFF查询皮肤发生错误 {type(e)}：{e}")
-                return "没有查询到...", 998
-        else:
+        if response.status_code != 200:
             return "访问失败！", response.status_code
+        try:
+            if response.text.find("Login Required") != -1:
+                return "BUFF登录被重置，请联系管理员重新登入", 996
+            data = response.json()["data"]
+            total_page = data["total_page"]
+            data = data["items"]
+            for _ in range(total_page):
+                for i in range(len(data)):
+                    name = data[i]["name"]
+                    price = data[i]["sell_reference_price"]
+                    name_list.append(name)
+                    price_list.append(price)
+        except Exception as e:
+            logger.error(f"BUFF查询皮肤发生错误 {type(e)}：{e}")
+            return "没有查询到...", 998
     except TimeoutError:
         return "访问超时! 请重试或稍后再试!", 997
     result = f"皮肤: {d_name}({len(name_list)})\n"
     for i in range(len(name_list)):
-        result += name_list[i] + ": " + price_list[i] + "\n"
+        result += f"{name_list[i]}: {price_list[i]}" + "\n"
     return result[:-1], 999
 
 

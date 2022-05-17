@@ -16,20 +16,17 @@ def get_old_ds() -> str:
     n = Config.get_config("genshin", "n")
     i = str(int(time.time()))
     r = ''.join(random.sample(string.ascii_lowercase + string.digits, 6))
-    c = _md5("salt=" + n + "&t=" + i + "&r=" + r)
-    return i + "," + r + "," + c
+    c = _md5(f"salt={n}&t={i}&r={r}")
+    return f"{i},{r},{c}"
 
 
 def get_ds(q: str = "", b: dict = None) -> str:
-    if b:
-        br = json.dumps(b)
-    else:
-        br = ""
+    br = json.dumps(b) if b else ""
     s = Config.get_config("genshin", "salt")
     t = str(int(time.time()))
     r = str(random.randint(100000, 200000))
-    c = _md5("salt=" + s + "&t=" + t + "&r=" + r + "&b=" + br + "&q=" + q)
-    return t + "," + r + "," + c
+    c = _md5(f"salt={s}&t={t}&r={r}&b={br}&q={q}")
+    return f"{t},{r},{c}"
 
 
 def random_hex(length: int) -> str:

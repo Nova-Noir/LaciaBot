@@ -97,19 +97,19 @@ async def _(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
             msg[1] = msg[1][:-1] if msg[1][-1] == "/" else msg[1]
             msg[1] = msg[1].split("/")[-1]
         id_ = msg[1][2:] if msg[1].startswith("md") else msg[1]
-    if not is_number(id_):
-        if sub_type in ["season", "动漫", "番剧"]:
-            rst = "*以为您找到以下番剧，请输入Id选择：*\n"
-            state["season_data"] = await get_media_id(id_)
-            if len(state["season_data"]) == 0:
-                await add_sub.finish(f"未找到番剧：{msg}")
-            for i, x in enumerate(state["season_data"]):
-                rst += f'{i + 1}.{state["season_data"][x]["title"]}\n----------\n'
-            await add_sub.send("\n".join(rst.split("\n")[:-1]))
-        else:
-            await add_sub.finish("Id 必须为全数字！")
-    else:
+    if is_number(id_):
         state["id"] = int(id_)
+
+    elif sub_type in ["season", "动漫", "番剧"]:
+        rst = "*以为您找到以下番剧，请输入Id选择：*\n"
+        state["season_data"] = await get_media_id(id_)
+        if len(state["season_data"]) == 0:
+            await add_sub.finish(f"未找到番剧：{msg}")
+        for i, x in enumerate(state["season_data"]):
+            rst += f'{i + 1}.{state["season_data"][x]["title"]}\n----------\n'
+        await add_sub.send("\n".join(rst.split("\n")[:-1]))
+    else:
+        await add_sub.finish("Id 必须为全数字！")
 
 
 @add_sub.got("sub_type")
@@ -122,17 +122,17 @@ async def _(
     sub_type: str = ArgStr("sub_type"),
     sub_user: str = ArgStr("sub_user"),
 ):
-    if sub_type in ["season", "动漫", "番剧"] and state.get("season_data"):
+    if sub_type in {"season", "动漫", "番剧"} and state.get("season_data"):
         season_data = state["season_data"]
         if not is_number(id_) or int(id_) < 1 or int(id_) > len(season_data):
             await add_sub.reject_arg("id", "Id必须为数字且在范围内！请重新输入...")
         id_ = season_data[int(id_) - 1]["media_id"]
     id_ = int(id_)
-    if sub_type in ["主播", "直播"]:
+    if sub_type in {"主播", "直播"}:
         await add_sub.send(await add_live_sub(id_, sub_user))
-    elif sub_type.lower() in ["up", "用户"]:
+    elif sub_type.lower() in {"up", "用户"}:
         await add_sub.send(await add_up_sub(id_, sub_user))
-    elif sub_type in ["season", "动漫", "番剧"]:
+    elif sub_type in {"season", "动漫", "番剧"}:
         await add_sub.send(await add_season_sub(id_, sub_user))
     else:
         await add_sub.finish("参数错误，第一参数必须为：主播/up/番剧！")
@@ -179,15 +179,15 @@ async def _(event: MessageEvent):
             live_rst += (
                 f"\t直播间id：{x.sub_id}\n" f"\t名称：{x.uname}\n" f"------------------\n"
             )
-        if x.sub_type == "up":
-            up_rst += f"\tUP：{x.uname}\n" f"\tuid：{x.uid}\n" f"------------------\n"
-        if x.sub_type == "season":
+        elif x.sub_type == "season":
             season_rst += (
                 f"\t番剧id：{x.sub_id}\n"
                 f"\t番名：{x.season_name}\n"
                 f"\t当前集数：{x.season_current_episode}\n"
                 f"------------------\n"
             )
+        elif x.sub_type == "up":
+            up_rst += f"\tUP：{x.uname}\n" f"\tuid：{x.uid}\n" f"------------------\n"
     live_rst = "当前订阅的直播：\n" + live_rst if live_rst else live_rst
     up_rst = "当前订阅的UP：\n" + up_rst if up_rst else up_rst
     season_rst = "当前订阅的番剧：\n" + season_rst if season_rst else season_rst

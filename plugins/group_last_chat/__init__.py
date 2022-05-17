@@ -22,13 +22,15 @@ async def _(event: GroupMessageEvent):
         time_data["_group"].remove(event.group_id)
         set_data_value("_group", time_data["_group"])
     for key in time_data.keys():
-        if key not in ["check_time", "_group"]:
-            if key not in time_data["_group"]:
-                if time.time() - time_data[key] > 60 * 60 * 36:
-                    await cancel_all_notice(key)
-                    time_data["_group"].append(key)
-                    set_data_value("_group", time_data["_group"])
-                    logger.info(f"GROUP {event.group_id} 因群内发言时间大于36小时被取消全部通知")
+        if (
+            key not in ["check_time", "_group"]
+            and key not in time_data["_group"]
+            and time.time() - time_data[key] > 60 * 60 * 36
+        ):
+            await cancel_all_notice(key)
+            time_data["_group"].append(key)
+            set_data_value("_group", time_data["_group"])
+            logger.info(f"GROUP {event.group_id} 因群内发言时间大于36小时被取消全部通知")
     if time.time() - time_data["check_time"] > 60 * 60 * 1:
         set_data_value("check_time", time.time())
         save_data()

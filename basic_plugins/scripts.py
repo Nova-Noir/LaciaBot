@@ -32,8 +32,8 @@ async def update_city():
     这里直接更新，避免插件内代码重复
     """
     china_city = TEXT_PATH / "china_city.json"
-    data = {}
     if not china_city.exists():
+        data = {}
         try:
             res = await AsyncHttpx.get(
                 "http://www.weather.com.cn/data/city3jdata/china.html", timeout=5
@@ -154,51 +154,53 @@ async def _(bot: Bot):
     版本某些需要的变换
     """
     # 清空不存在的群聊信息，并将已所有已存在的群聊group_flag设置为1（认证所有已存在的群）
-    if not await GroupInfo.get_group_info(114514):
-        # 标识符，该功能只需执行一次
-        await GroupInfo.add_group_info(114514, "114514", 114514, 114514, 1)
-        group_list = await bot.get_group_list()
-        group_list = [g["group_id"] for g in group_list]
-        _gl = [x.group_id for x in await GroupInfo.get_all_group()]
-        if 114514 in _gl:
-            _gl.remove(114514)
-        for group_id in _gl:
-            if group_id in group_list:
-                if await GroupInfo.get_group_info(group_id):
-                    await GroupInfo.set_group_flag(group_id, 1)
-                else:
-                    group_info = await bot.get_group_info(group_id=group_id)
-                    await GroupInfo.add_group_info(
-                        group_info["group_id"],
-                        group_info["group_name"],
-                        group_info["max_member_count"],
-                        group_info["member_count"],
-                        1,
-                    )
-                logger.info(f"已将群聊 {group_id} 添加认证...")
+    if await GroupInfo.get_group_info(114514):
+        return
+    # 标识符，该功能只需执行一次
+    await GroupInfo.add_group_info(114514, "114514", 114514, 114514, 1)
+    group_list = await bot.get_group_list()
+    group_list = [g["group_id"] for g in group_list]
+    _gl = [x.group_id for x in await GroupInfo.get_all_group()]
+    if 114514 in _gl:
+        _gl.remove(114514)
+    for group_id in _gl:
+        if group_id in group_list:
+            if await GroupInfo.get_group_info(group_id):
+                await GroupInfo.set_group_flag(group_id, 1)
             else:
-                await GroupInfo.delete_group_info(group_id)
-                logger.info(f"移除不存在的群聊信息：{group_id}")
+                group_info = await bot.get_group_info(group_id=group_id)
+                await GroupInfo.add_group_info(
+                    group_info["group_id"],
+                    group_info["group_name"],
+                    group_info["max_member_count"],
+                    group_info["member_count"],
+                    1,
+                )
+            logger.info(f"已将群聊 {group_id} 添加认证...")
+        else:
+            await GroupInfo.delete_group_info(group_id)
+            logger.info(f"移除不存在的群聊信息：{group_id}")
 
 
 async def __database_script(_flag: List[str]):
     # bag_user 将文本转为字典格式
-    if "bag_users" in _flag:
-        for x in await BagUser.get_all_users():
-            props = {}
-            if x.props:
-                for prop in [p for p in x.props.split(",") if p]:
-                    if props.get(prop):
-                        props[prop] += 1
-                    else:
-                        props[prop] = 1
-                logger.info(
-                    f"__database_script USER {x.user_qq} GROUP {x.group_id} 更新数据 {props}"
-                )
-            await x.update(
-                property=props,
-                props="",
-            ).apply()
+    if "bag_users" not in _flag:
+        return
+    for x in await BagUser.get_all_users():
+        props = {}
+        if x.props:
+            for prop in [p for p in x.props.split(",") if p]:
+                if props.get(prop):
+                    props[prop] += 1
+                else:
+                    props[prop] = 1
+            logger.info(
+                f"__database_script USER {x.user_qq} GROUP {x.group_id} 更新数据 {props}"
+            )
+        await x.update(
+            property=props,
+            props="",
+        ).apply()
 
 
 # 自动更新城市列表

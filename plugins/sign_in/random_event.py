@@ -22,7 +22,7 @@ def random_event(impression: float) -> 'Union[str, int], str':
     for prob in PROB_DATA.keys():
         if rand <= prob:
             return PROB_DATA[prob], 'props'
-    gold = random.randint(1, random.randint(1, int(1 if impression < 1 else impression)))
+    gold = random.randint(1, random.randint(1, int(max(impression, 1))))
     max_sign_gold = Config.get_config("sign_in", "MAX_SIGN_GOLD")
     gold = max_sign_gold if gold > max_sign_gold else gold
     return gold, 'gold'

@@ -45,46 +45,46 @@ async def _(bot: Bot, event: GroupMessageEvent, cmd: Tuple[str, ...] = Command()
         args = arg.extract_plain_text().strip().split()
         qq = get_message_at(event.json())
         flag = -1
-        if not qq:
-            if len(args) > 2:
-                if is_number(args[0]) and is_number(args[1]) and is_number(args[2]):
-                    qq = int(args[0])
-                    group_id = int(args[1])
-                    level = int(args[2])
-                    flag = 1
-                else:
-                    await super_cmd.finish("所有参数必须是数字！", at_sender=True)
-            else:
-                await super_cmd.finish(
-                    "权限参数不完全\n\t格式：添加/删除权限 [at] [level]"
-                    "\n\t格式：添加/删除权限 [qq] [group_id] [level]",
-                    at_sender=True,
-                )
-        else:
+        if qq:
             if not is_number(args[0]):
                 await super_cmd.finish("所有参数必须是数字！", at_sender=True)
             level = int(args[0])
             qq = qq[0]
             group_id = event.group_id
             flag = 2
-        if cmd[:2] == "添加":
-            if await LevelUser.set_level(qq, group_id, level, 1):
-                result = "添加管理成功, 权限: " + str(level)
+        elif len(args) > 2:
+            if is_number(args[0]) and is_number(args[1]) and is_number(args[2]):
+                qq = int(args[0])
+                group_id = int(args[1])
+                level = int(args[2])
+                flag = 1
             else:
-                result = "管理已存在, 更新权限: " + str(level)
+                await super_cmd.finish("所有参数必须是数字！", at_sender=True)
         else:
-            if await LevelUser.delete_level(qq, event.group_id):
-                result = "删除管理成功!"
-            else:
-                result = "该账号无管理权限!"
-        if flag == 2:
-            await super_cmd.send(result)
-        elif flag == 1:
+            await super_cmd.finish(
+                "权限参数不完全\n\t格式：添加/删除权限 [at] [level]"
+                "\n\t格式：添加/删除权限 [qq] [group_id] [level]",
+                at_sender=True,
+            )
+        if cmd[:2] == "添加":
+            result = (
+                f"添加管理成功, 权限: {level}"
+                if await LevelUser.set_level(qq, group_id, level, 1)
+                else f"管理已存在, 更新权限: {level}"
+            )
+
+        elif await LevelUser.delete_level(qq, event.group_id):
+            result = "删除管理成功!"
+        else:
+            result = "该账号无管理权限!"
+        if flag == 1:
             await bot.send_group_msg(
                 group_id=group_id,
                 message=Message(f"{at(qq)}管理员修改了你的权限" f"\n--------\n你当前的权限等级：{level}"),
             )
             await super_cmd.send("修改成功")
+        elif flag == 2:
+            await super_cmd.send(result)
     except Exception as e:
         await super_cmd.send("执行指令失败!")
         logger.error(f"执行指令失败 e：{e}")

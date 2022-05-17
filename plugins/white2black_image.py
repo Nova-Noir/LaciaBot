@@ -49,7 +49,7 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
     img = get_message_img(event.json())
     msg = arg.extract_plain_text().strip()
     if not img or not msg:
-        await w2b_img.finish(f"格式错误：\n" + __plugin_usage__)
+        await w2b_img.finish(f"格式错误：\\n{__plugin_usage__}")
     img = img[0]
     if not await AsyncHttpx.download_file(
         img, TEMP_PATH / f"{event.user_id}_w2b.png"
@@ -68,7 +68,7 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
         if len(msg_sp) == 1:
             centered_text(bg, chinese_msg, add_h)
         else:
-            centered_text(bg, chinese_msg + "<|>" + msg_sp[1], add_h)
+            centered_text(bg, f"{chinese_msg}<|>{msg_sp[1]}", add_h)
     elif not bg.check_font_size(msg_sp[0]):
         centered_text(bg, msg, add_h)
     else:
@@ -104,7 +104,8 @@ def centered_text(img: BuildImage, text: str, add_h: int):
 
 
 async def get_translate(msg: str) -> str:
-    url = f"http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=null"
+    url = "http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=null"
+
     data = {
         "type": "ZH_CN2JA",
         "i": msg,
@@ -118,17 +119,14 @@ async def get_translate(msg: str) -> str:
     data = (await AsyncHttpx.post(url, data=data)).json()
     if data["errorCode"] == 0:
         translate = data["translateResult"][0][0]["tgt"]
-        msg += "<|>" + translate
+        msg += f"<|>{translate}"
     return msg
 
 
 def formalization_msg(msg: str) -> str:
     rst = ""
     for i in range(len(msg)):
-        if is_chinese(msg[i]):
-            rst += msg[i] + " "
-        else:
-            rst += msg[i]
+        rst += f"{msg[i]} " if is_chinese(msg[i]) else msg[i]
         if i + 1 < len(msg) and is_chinese(msg[i + 1]) and msg[i].isalpha():
             rst += " "
     return rst

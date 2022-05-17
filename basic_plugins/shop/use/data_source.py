@@ -63,9 +63,7 @@ class GoodsUseFuncManager:
         获取商品使用方法的kwargs
         :param goods_name: 商品名称
         """
-        if self.exists(goods_name):
-            return self._data[goods_name]["kwargs"]
-        return {}
+        return self._data[goods_name]["kwargs"] if self.exists(goods_name) else {}
 
 
 func_manager = GoodsUseFuncManager()
@@ -114,8 +112,6 @@ def register_use(goods_name: str, func, **kwargs):
     # 发送使用成功信息
     if kwargs.get("send_success_msg") is None:
         kwargs["send_success_msg"] = True
-    kwargs["_max_num_limit"] = (
-        kwargs.get("_max_num_limit") if kwargs.get("_max_num_limit") else 1
-    )
+    kwargs["_max_num_limit"] = kwargs.get("_max_num_limit") or 1
     func_manager.register_use(goods_name, **{"func": func, "kwargs": kwargs})
     logger.info(f"register_use 成功注册商品：{goods_name} 的使用函数")

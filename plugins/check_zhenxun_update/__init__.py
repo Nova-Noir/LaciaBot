@@ -62,7 +62,8 @@ async def _(bot: Bot):
     else:
         if code == 200:
             await bot.send_private_msg(
-                user_id=int(list(bot.config.superusers)[0]), message=f"更新完毕，请重启真寻...."
+                user_id=int(list(bot.config.superusers)[0]),
+                message="更新完毕，请重启真寻....",
             )
 
 
@@ -74,7 +75,7 @@ async def _():
 
 @restart.got("flag", prompt="确定是否重启真寻？（重启失败咱们将失去联系，请谨慎！）")
 async def _(flag: str = ArgStr("flag")):
-    if flag.lower() in ["true", "是", "好", "确定", "确定是"]:
+    if flag.lower() in {"true", "是", "好", "确定", "确定是"}:
         await restart.send("开始重启真寻..请稍等...")
         open("is_restart", "w")
         os.system("./restart.sh")
@@ -88,26 +89,27 @@ async def _(flag: str = ArgStr("flag")):
     minute=0,
 )
 async def _():
-    if Config.get_config("check_zhenxun_update", "AUTO_UPDATE_ZHENXUN"):
-        _version = "v0.0.0"
-        _version_file = Path() / "__version__"
-        if _version_file.exists():
-            _version = (
-                open(_version_file, "r", encoding="utf8")
-                .readline()
-                .split(":")[-1]
-                .strip()
+    if not Config.get_config("check_zhenxun_update", "AUTO_UPDATE_ZHENXUN"):
+        return
+    _version = "v0.0.0"
+    _version_file = Path() / "__version__"
+    if _version_file.exists():
+        _version = (
+            open(_version_file, "r", encoding="utf8")
+            .readline()
+            .split(":")[-1]
+            .strip()
+        )
+    data = await get_latest_version_data()
+    if data:
+        latest_version = data["name"]
+        if _version != latest_version:
+            bot = get_bot()
+            await bot.send_private_msg(
+                user_id=int(list(bot.config.superusers)[0]),
+                message=f"检测到真寻版本更新\n"
+                f"当前版本：{_version}，最新版本：{latest_version}",
             )
-        data = await get_latest_version_data()
-        if data:
-            latest_version = data["name"]
-            if _version != latest_version:
-                bot = get_bot()
-                await bot.send_private_msg(
-                    user_id=int(list(bot.config.superusers)[0]),
-                    message=f"检测到真寻版本更新\n"
-                    f"当前版本：{_version}，最新版本：{latest_version}",
-                )
                 # try:
                 #     code = await check_update(bot)
                 # except Exception as e:

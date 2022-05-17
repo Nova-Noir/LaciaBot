@@ -12,7 +12,7 @@ def rule(bot: Bot, event: Event, state: T_State) -> bool:
     :param state: pass
     """
     msg = get_message_text(event.json())
-    for x in Config.get_config("image_management", "IMAGE_DIR_LIST"):
-        if msg.startswith(x):
-            return True
-    return False
+    return any(
+        msg.startswith(x)
+        for x in Config.get_config("image_management", "IMAGE_DIR_LIST")
+    )

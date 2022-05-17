@@ -52,11 +52,10 @@ class RedbagUser(db.Model):
             :param group_id: 群号
         """
         query = cls.query.where((cls.user_qq == user_qq) & (cls.group_id == group_id))
-        user = await query.gino.first() or await cls.create(
+        return await query.gino.first() or await cls.create(
             user_qq=user_qq,
             group_id=group_id,
         )
-        return user
 
     @classmethod
     async def get_user_all(cls, group_id: int = None) -> List["RedbagUser"]:
@@ -66,8 +65,8 @@ class RedbagUser(db.Model):
         参数：
             :param group_id: 群号
         """
-        if not group_id:
-            query = await cls.query.gino.all()
-        else:
-            query = await cls.query.where((cls.group_id == group_id)).gino.all()
-        return query
+        return (
+            await cls.query.where((cls.group_id == group_id)).gino.all()
+            if group_id
+            else await cls.query.gino.all()
+        )

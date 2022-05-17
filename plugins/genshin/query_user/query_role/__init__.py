@@ -39,10 +39,7 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
         if not is_number(msg):
             await query_role_info_matcher.finish("查询uid必须为数字！")
         msg = int(msg)
-    if not msg:
-        uid = await Genshin.get_user_uid(event.user_id)
-    else:
-        uid = msg
+    uid = msg or await Genshin.get_user_uid(event.user_id)
     if not uid:  # or not await Genshin.get_user_cookie(uid):
         await query_role_info_matcher.finish("请先绑定uid和cookie！")
     nickname = event.sender.card or event.sender.nickname

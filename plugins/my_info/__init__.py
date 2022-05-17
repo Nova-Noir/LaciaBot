@@ -35,8 +35,8 @@ async def get_member_info(user_qq: int, group_id: int) -> str:
     if user is None:
         return "该群员不在列表中，请更新群成员信息"
     result = ""
-    result += "昵称:" + user.user_name + "\n"
-    result += "加群时间:" + str(user.user_join_time.date() + timedelta(hours=8))
+    result += f"昵称:{user.user_name}" + "\n"
+    result += f"加群时间:{str(user.user_join_time.date() + timedelta(hours=8))}"
     return result
 
 

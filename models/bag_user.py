@@ -54,12 +54,11 @@ class BagUser(db.Model):
         user = await query.gino.first()
         if user:
             return user.gold
-        else:
-            await cls.create(
-                user_qq=user_qq,
-                group_id=group_id,
-            )
-            return 100
+        await cls.create(
+            user_qq=user_qq,
+            group_id=group_id,
+        )
+        return 100
 
     @classmethod
     async def get_property(cls, user_qq: int, group_id: int) -> Dict[str, int]:
@@ -74,12 +73,11 @@ class BagUser(db.Model):
         user = await query.gino.first()
         if user:
             return user.property
-        else:
-            await cls.create(
-                user_qq=user_qq,
-                group_id=group_id,
-            )
-            return {}
+        await cls.create(
+            user_qq=user_qq,
+            group_id=group_id,
+        )
+        return {}
 
     @classmethod
     async def add_gold(cls, user_qq: int, group_id: int, num: int):
@@ -219,8 +217,8 @@ class BagUser(db.Model):
         参数：
             :param group_id: 群号
         """
-        if not group_id:
-            query = await cls.query.gino.all()
-        else:
-            query = await cls.query.where((cls.group_id == group_id)).gino.all()
-        return query
+        return (
+            await cls.query.where((cls.group_id == group_id)).gino.all()
+            if group_id
+            else await cls.query.gino.all()
+        )

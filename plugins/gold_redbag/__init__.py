@@ -91,26 +91,27 @@ async def _(matcher: Matcher, event: PokeNotifyEvent):
             flag1 = True
             flag2 = True
             try:
-                if festive_redbag_data[event.group_id]["user_id"]:
-                    if (
-                        event.user_id
-                        in festive_redbag_data[event.group_id]["open_user"]
-                    ):
-                        flag1 = False
+                if festive_redbag_data[event.group_id]["user_id"] and (
+                    event.user_id
+                    in festive_redbag_data[event.group_id]["open_user"]
+                ):
+                    flag1 = False
             except KeyError:
                 flag1 = False
             try:
-                if redbag_data[event.group_id]["user_id"]:
-                    if event.user_id in redbag_data[event.group_id]["open_user"]:
-                        flag2 = False
+                if (
+                    redbag_data[event.group_id]["user_id"]
+                    and event.user_id
+                    in redbag_data[event.group_id]["open_user"]
+                ):
+                    flag2 = False
             except KeyError:
                 flag2 = False
             if flag1 or flag2:
                 if matcher.plugin_name == "poke":
                     raise IgnoredException("目前正在抢红包...")
-            else:
-                if matcher.plugin_name == "gold_redbag":
-                    raise IgnoredException("目前没有红包...")
+            elif matcher.plugin_name == "gold_redbag":
+                raise IgnoredException("目前没有红包...")
     except AttributeError:
         pass
 
@@ -183,15 +184,14 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
 async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
     global redbag_data, festive_redbag_data
     msg = arg.extract_plain_text().strip()
-    msg = (
+    if msg := (
         msg.replace("!", "")
         .replace("！", "")
         .replace(",", "")
         .replace("，", "")
         .replace(".", "")
         .replace("。", "")
-    )
-    if msg:
+    ):
         if "红包" not in msg:
             return
     flag1 = True
@@ -199,16 +199,21 @@ async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
     open_flag1 = True
     open_flag2 = True
     try:
-        if festive_redbag_data[event.group_id]["user_id"]:
-            if event.user_id in festive_redbag_data[event.group_id]["open_user"]:
-                open_flag1 = False
+        if (
+            festive_redbag_data[event.group_id]["user_id"]
+            and event.user_id
+            in festive_redbag_data[event.group_id]["open_user"]
+        ):
+            open_flag1 = False
     except KeyError:
         open_flag1 = False
         flag1 = False
     try:
-        if redbag_data[event.group_id]["user_id"]:
-            if event.user_id in redbag_data[event.group_id]["open_user"]:
-                open_flag2 = False
+        if (
+            redbag_data[event.group_id]["user_id"]
+            and event.user_id in redbag_data[event.group_id]["open_user"]
+        ):
+            open_flag2 = False
     except KeyError:
         flag2 = False
     if not flag1 and not flag2:
@@ -285,8 +290,7 @@ async def _(event: GroupMessageEvent):
 @festive_redbag.handle()
 async def _(bot: Bot, arg: Message = CommandArg()):
     global redbag_data
-    msg = arg.extract_plain_text().strip()
-    if msg:
+    if msg := arg.extract_plain_text().strip():
         msg = msg.split()
         amount = 0
         num = 0
@@ -337,7 +341,6 @@ async def _(bot: Bot, arg: Message = CommandArg()):
                 )
             except ActionFailed:
                 logger.warning(f"节日红包 GROUP {g} 发送失败..")
-                pass
 
 
 # 红包数据初始化

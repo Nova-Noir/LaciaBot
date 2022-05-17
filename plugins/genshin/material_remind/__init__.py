@@ -70,9 +70,9 @@ async def _(event: MessageEvent):
 async def _():
     if await update_image():
         await super_cmd.send("更新成功...")
-        logger.info(f"更新每日天赋素材成功...")
+        logger.info("更新每日天赋素材成功...")
     else:
-        await super_cmd.send(f"更新失败...")
+        await super_cmd.send("更新失败...")
 
 
 async def update_image():
@@ -103,7 +103,7 @@ async def update_image():
             await page.query_selector_all(".GSTraitCotainer_trait_section__1f3bc")
         ):
             index = 0
-            type_ = "char" if not i else "weapons"
+            type_ = "weapons" if i else "char"
             for x in await card.query_selector_all("xpath=child::*"):
                 await x.screenshot(
                     path=f"{IMAGE_PATH}/genshin/material/{type_}_{index}.png",
@@ -154,9 +154,10 @@ async def update_image():
 
 # 获取背景高度以及修改最后一张图片的黑边
 def get_background_height(weapons_img: List[str]) -> int:
-    height = 0
-    for weapons in weapons_img:
-        height += BuildImage(0, 0, background=weapons).size[1]
+    height = sum(
+        BuildImage(0, 0, background=weapons).size[1] for weapons in weapons_img
+    )
+
     last_weapon = BuildImage(0, 0, background=weapons_img[-1])
     w, h = last_weapon.size
     last_weapon.crop((0, 0, w, h - 10))

@@ -112,15 +112,14 @@ async def do_something(
     state: T_State,
 ):
     global setu_data_list
-    if isinstance(event, MessageEvent):
-        if matcher.plugin_name == "send_setu":
-            # 添加数据至数据库
-            try:
-                await add_data_to_database(setu_data_list)
-                logger.info("色图数据自动存储数据库成功...")
-                setu_data_list = []
-            except UninitializedError:
-                pass
+    if isinstance(event, MessageEvent) and matcher.plugin_name == "send_setu":
+        # 添加数据至数据库
+        try:
+            await add_data_to_database(setu_data_list)
+            logger.info("色图数据自动存储数据库成功...")
+            setu_data_list = []
+        except UninitializedError:
+            pass
 
 
 setu = on_command(
@@ -139,19 +138,19 @@ async def _(
         impression = (
             await SignGroupUser.ensure(event.user_id, event.group_id)
         ).impression
-        luox = get_luoxiang(impression)
-        if luox:
+        if luox := get_luoxiang(impression):
             await setu.finish(luox)
     r18 = 0
     num = 1
     # 是否看r18
-    if cmd[0] == "色图r" and isinstance(event, PrivateMessageEvent):
-        r18 = 1
-        num = 10
-    elif cmd[0] == "色图r" and isinstance(event, GroupMessageEvent):
-        await setu.finish(
-            random.choice(["这种不好意思的东西怎么可能给这么多人看啦", "羞羞脸！给我滚出克私聊！", "变态变态变态变态大变态！"])
-        )
+    if cmd[0] == "色图r":
+        if isinstance(event, PrivateMessageEvent):
+            r18 = 1
+            num = 10
+        elif isinstance(event, GroupMessageEvent):
+            await setu.finish(
+                random.choice(["这种不好意思的东西怎么可能给这么多人看啦", "羞羞脸！给我滚出克私聊！", "变态变态变态变态大变态！"])
+            )
     # 有 数字 的话先尝试本地色图id
     if msg and is_number(msg):
         setu_list, code = await get_setu_list(int(msg), r18=r18)
@@ -195,31 +194,27 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
         impression = (
             await SignGroupUser.ensure(event.user_id, event.group_id)
         ).impression
-        luox = get_luoxiang(impression)
-        if luox:
+        if luox := get_luoxiang(impression):
             await setu.finish(luox, at_sender=True)
     msg = arg.extract_plain_text().strip()
     num = 1
-    msg = re.search(r"(.*)[份发张个次点](.*)[瑟涩色]图", msg)
-    # 解析 tags 以及 num
-    if msg:
-        num = msg.group(1)
-        tags = msg.group(2)
-        if tags:
-            tags = tags[:-1] if tags[-1] == "的" else tags
-        if num:
-            num = num[-1]
-            if num_key.get(num):
-                num = num_key[num]
-            elif is_number(num):
-                try:
-                    num = int(num)
-                except ValueError:
-                    num = 1
-            else:
-                num = 1
-    else:
+    if not (msg := re.search(r"(.*)[份发张个次点](.*)[瑟涩色]图", msg)):
         return
+    num = msg.group(1)
+    tags = msg.group(2)
+    if tags:
+        tags = tags[:-1] if tags[-1] == "的" else tags
+    if num:
+        num = num[-1]
+        if num_key.get(num):
+            num = num_key[num]
+        elif is_number(num):
+            try:
+                num = int(num)
+            except ValueError:
+                num = 1
+        else:
+            num = 1
     await send_setu_handle(setu_reg, event, "色图", tags, num, 0)
 
 

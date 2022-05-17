@@ -19,8 +19,7 @@ __plugin_author__ = 'HibiKier'
     minute=1,
 )
 async def _():
-    bot = get_bot()
-    if bot:
+    if bot := get_bot():
         gl = await bot.get_group_list()
         gl = [g["group_id"] for g in gl]
         for g in gl:
@@ -38,8 +37,7 @@ async def _():
 )
 async def _():
     try:
-        bot = get_bot()
-        if bot:
+        if bot := get_bot():
             gl = await bot.get_group_list()
             gl = [g["group_id"] for g in gl]
             all_group = [x.group_id for x in await GroupInfo.get_all_group()]

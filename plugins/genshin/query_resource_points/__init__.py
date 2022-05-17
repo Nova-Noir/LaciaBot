@@ -70,10 +70,10 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
     msg = arg.extract_plain_text().strip()
     if "在哪" in msg:
         rs = re.search("(.*)在哪.*?", msg)
-        resource_name = rs.group(1) if rs else ""
+        resource_name = rs[1] if rs else ""
     else:
         rs = re.search(".*?(哪有|哪里有)(.*)", msg)
-        resource_name = rs.group(2) if rs else ""
+        resource_name = rs[2] if rs else ""
     if check_resource_exists(resource_name):
         await qr.send("正在生成位置....")
         resource = await query_resource(resource_name)
@@ -126,6 +126,6 @@ async def _():
 async def _():
     try:
         await init()
-        logger.info(f"每日更新原神材料信息成功！")
+        logger.info("每日更新原神材料信息成功！")
     except Exception as e:
         logger.error(f"每日更新原神材料信息错误：{e}")

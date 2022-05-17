@@ -58,11 +58,10 @@ async def _(bot: Bot, event: MessageEvent):
                 )
             )
         )
+    elif str(event.user_id) in bot.config.superusers:
+        await show_keyword.finish("目前没有已收录或待收录的搜索关键词...")
     else:
-        if str(event.user_id) in bot.config.superusers:
-            await show_keyword.finish(f"目前没有已收录或待收录的搜索关键词...")
-        else:
-            await show_keyword.finish(f"目前没有已收录的搜索关键词...")
+        await show_keyword.finish("目前没有已收录的搜索关键词...")
 
 
 @show_pix.handle()

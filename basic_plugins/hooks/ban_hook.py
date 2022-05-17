@@ -36,51 +36,50 @@ async def _(matcher: Matcher, bot: Bot, event: MessageEvent, state: T_State):
         pass
     if not isinstance(event, MessageEvent):
         return
-    if matcher.type == "message" and matcher.priority not in [1, 9]:
-        if (
+    if (
+        matcher.type == "message"
+        and matcher.priority not in [1, 9]
+        and (
             await BanUser.is_ban(event.user_id)
             and str(event.user_id) not in bot.config.superusers
-        ):
-            time = await BanUser.check_ban_time(event.user_id)
-            if is_number(time):
-                time = abs(int(time))
-                if time < 60:
-                    time = str(time) + " 秒"
-                else:
-                    time = str(int(time / 60)) + " 分钟"
-            else:
-                time = str(time) + " 分钟"
-            if isinstance(event, GroupMessageEvent):
-                if not static_flmt.check(event.user_id):
-                    raise IgnoredException("用户处于黑名单中")
-                static_flmt.start_cd(event.user_id)
-                if matcher.priority != 9:
-                    try:
-                        ban_result = Config.get_config("hook", "BAN_RESULT")
-                        if ban_result and _flmt.check(event.user_id):
-                            _flmt.start_cd(event.user_id)
-                            await bot.send_group_msg(
-                                group_id=event.group_id,
-                                message=at(event.user_id)
-                                + ban_result
-                                + f" 在..在 {time} 后才会理你喔",
-                            )
-                    except ActionFailed:
-                        pass
-            else:
-                if not static_flmt.check(event.user_id):
-                    raise IgnoredException("用户处于黑名单中")
-                static_flmt.start_cd(event.user_id)
-                if matcher.priority != 9:
-                    try:
-                        ban_result = Config.get_config("hook", "BAN_RESULT")
-                        if ban_result:
-                            await bot.send_private_msg(
-                                user_id=event.user_id,
-                                message=at(event.user_id)
-                                + ban_result
-                                + f" 在..在 {time}后才会理你喔",
-                            )
-                    except ActionFailed:
-                        pass
-            raise IgnoredException("用户处于黑名单中")
+        )
+    ):
+        time = await BanUser.check_ban_time(event.user_id)
+        if is_number(time):
+            time = abs(int(time))
+            time = f"{str(time)} 秒" if time < 60 else f"{int(time / 60)} 分钟"
+        else:
+            time = f"{str(time)} 分钟"
+        if isinstance(event, GroupMessageEvent):
+            if not static_flmt.check(event.user_id):
+                raise IgnoredException("用户处于黑名单中")
+            static_flmt.start_cd(event.user_id)
+            if matcher.priority != 9:
+                try:
+                    ban_result = Config.get_config("hook", "BAN_RESULT")
+                    if ban_result and _flmt.check(event.user_id):
+                        _flmt.start_cd(event.user_id)
+                        await bot.send_group_msg(
+                            group_id=event.group_id,
+                            message=at(event.user_id)
+                            + ban_result
+                            + f" 在..在 {time} 后才会理你喔",
+                        )
+                except ActionFailed:
+                    pass
+        else:
+            if not static_flmt.check(event.user_id):
+                raise IgnoredException("用户处于黑名单中")
+            static_flmt.start_cd(event.user_id)
+            if matcher.priority != 9:
+                try:
+                    if ban_result := Config.get_config("hook", "BAN_RESULT"):
+                        await bot.send_private_msg(
+                            user_id=event.user_id,
+                            message=at(event.user_id)
+                            + ban_result
+                            + f" 在..在 {time}后才会理你喔",
+                        )
+                except ActionFailed:
+                    pass
+        raise IgnoredException("用户处于黑名单中")

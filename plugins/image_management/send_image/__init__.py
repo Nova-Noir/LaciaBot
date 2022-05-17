@@ -62,9 +62,7 @@ async def _(event: MessageEvent):
     gallery = msg[0]
     if gallery not in Config.get_config("image_management", "IMAGE_DIR_LIST"):
         return
-    img_id = None
-    if len(msg) > 1:
-        img_id = msg[1]
+    img_id = msg[1] if len(msg) > 1 else None
     path = _path / cn2py(gallery)
     if gallery in Config.get_config(
         "image_management", "IMAGE_DIR_LIST"
@@ -77,13 +75,12 @@ async def _(event: MessageEvent):
     if length == 0:
         logger.warning(f'图库 {cn2py(gallery)} 为空，调用取消！')
         await send_img.finish("该图库中没有图片噢")
-    index = img_id if img_id else str(random.randint(0, length - 1))
+    index = img_id or str(random.randint(0, length - 1))
     if not is_number(index):
         return
     if int(index) > length - 1 or int(index) < 0:
         await send_img.finish(f"超过当前上下限！({length - 1})")
-    result = image(path / f"{index}.jpg")
-    if result:
+    if result := image(path / f"{index}.jpg"):
         logger.info(
             f"(USER {event.user_id}, GROUP "
             f"{event.group_id if isinstance(event, GroupMessageEvent) else 'private'}) "
@@ -91,10 +88,11 @@ async def _(event: MessageEvent):
             + result
         )
         msg_id = await send_img.send(
-            f"id：{index}" + result
+            f"id：{index}{result}"
             if Config.get_config("image_management", "SHOW_ID")
-            else "" + result
+            else f"{result}"
         )
+
         withdraw_message_manager.withdraw_message(
             event,
             msg_id,
@@ -106,7 +104,7 @@ async def _(event: MessageEvent):
             f"{event.group_id if isinstance(event, GroupMessageEvent) else 'private'}) "
             f"发送 {cn2py(gallery)} 失败"
         )
-        await send_img.finish(f"不想给你看Ov|")
+        await send_img.finish("不想给你看Ov|")
 
 
 @pa_reg.handle()

@@ -34,20 +34,12 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
     msg = arg.extract_plain_text().strip().split()
     img = get_message_img(event.json())
     if len(msg) > 1:
-        if len(msg) == 2:
-            url = msg[0]
-            title = msg[1]
-            content = ""
-        else:
-            url = msg[0]
-            title = msg[1]
-            content = msg[2]
-        if img:
-            img = img[0]
-        else:
-            img = ""
+        url = msg[0]
+        title = msg[1]
+        content = "" if len(msg) == 2 else msg[2]
+        img = img[0] if img else ""
         if "http" not in url:
-            url = "http://" + url
+            url = f"http://{url}"
         await fake_msg.send(share(url, title, content, img))
         logger.info(
             f"(USER {event.user_id}, GROUP {event.group_id if isinstance(event, GroupMessageEvent) else 'private'})"

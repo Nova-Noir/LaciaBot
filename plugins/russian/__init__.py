@@ -102,15 +102,12 @@ async def _(event: GroupMessageEvent):
             rs_player[event.group_id][1] == event.user_id
             or rs_player[event.group_id][2] == event.user_id
         ):
-            await accept.finish(f"你已经身处决斗之中了啊，给我认真一点啊！", at_sender=True)
+            await accept.finish("你已经身处决斗之中了啊，给我认真一点啊！", at_sender=True)
         else:
             await accept.finish("已经有人接受对决了，你还是乖乖等待下一场吧！", at_sender=True)
     if rs_player[event.group_id][1] == event.user_id:
         await accept.finish("请不要自己枪毙自己！换人来接受对决...", at_sender=True)
-    if (
-        rs_player[event.group_id]["at"] != 0
-        and rs_player[event.group_id]["at"] != event.user_id
-    ):
+    if rs_player[event.group_id]["at"] not in [0, event.user_id]:
         await accept.finish(
             Message(f'这场对决是邀请 {at(rs_player[event.group_id]["at"])}的，不要捣乱！'),
             at_sender=True,
@@ -173,10 +170,10 @@ async def _(bot: Bot, event: GroupMessageEvent):
         or rs_player[event.group_id][2] == 0
     ):
         await settlement.finish("比赛并没有开始...无法结算...", at_sender=True)
-    if (
-        event.user_id != rs_player[event.group_id][1]
-        and event.user_id != rs_player[event.group_id][2]
-    ):
+    if event.user_id not in [
+        rs_player[event.group_id][1],
+        rs_player[event.group_id][2],
+    ]:
         await settlement.finish("吃瓜群众不要捣乱！黄牌警告！", at_sender=True)
     if time.time() - rs_player[event.group_id]["time"] <= 30:
         await settlement.finish(
@@ -236,12 +233,12 @@ async def _(
         msg = msg.split()
         if len(msg) == 1:
             msg = msg[0]
-            if is_number(msg) and not (int(msg) < 1 or int(msg) > 6):
+            if is_number(msg) and int(msg) >= 1 and int(msg) <= 6:
                 state["bullet_num"] = int(msg)
         else:
             money = msg[1].strip()
             msg = msg[0].strip()
-            if is_number(msg) and not (int(msg) < 1 or int(msg) > 6):
+            if is_number(msg) and int(msg) >= 1 and int(msg) <= 6:
                 state["bullet_num"] = int(msg)
             if is_number(money) and 0 < int(money) <= Config.get_config(
                 "russian", "MAX_RUSSIAN_BET_GOLD"
@@ -260,7 +257,7 @@ async def _(
     event: GroupMessageEvent, state: T_State, bullet_num: str = ArgStr("bullet_num")
 ):
     global rs_player
-    if bullet_num in ["取消", "算了"]:
+    if bullet_num in {"取消", "算了"}:
         await russian.finish("已取消操作...")
     try:
         if rs_player[event.group_id][1] != 0:
@@ -350,10 +347,10 @@ async def _(bot: Bot, event: GroupMessageEvent):
     player1_name = rs_player[event.group_id]["player1"]
     player2_name = rs_player[event.group_id]["player2"]
     if rs_player[event.group_id]["next"] != event.user_id:
-        if (
-            event.user_id != rs_player[event.group_id][1]
-            and event.user_id != rs_player[event.group_id][2]
-        ):
+        if event.user_id not in [
+            rs_player[event.group_id][1],
+            rs_player[event.group_id][2],
+        ]:
             await shot.finish(
                 random.choice(
                     [
@@ -442,9 +439,10 @@ async def end_game(bot: Bot, event: GroupMessageEvent):
     await BagUser.spend_gold(lose_user_id, event.group_id, money)
     win_user = await RussianUser.ensure(win_user_id, event.group_id)
     lose_user = await RussianUser.ensure(lose_user_id, event.group_id)
-    bullet_str = ""
-    for x in rs_player[event.group_id]["bullet"]:
-        bullet_str += "__ " if x == 0 else "| "
+    bullet_str = "".join(
+        "__ " if x == 0 else "| " for x in rs_player[event.group_id]["bullet"]
+    )
+
     logger.info(f"俄罗斯轮盘：胜者：{win_name} - 败者：{lose_name} - 金币：{money}")
     rs_player[event.group_id] = {}
     await bot.send(
@@ -489,10 +487,7 @@ async def _(
     arg: Message = CommandArg(),
 ):
     num = arg.extract_plain_text().strip()
-    if is_number(num) and 51 > int(num) > 10:
-        num = int(num)
-    else:
-        num = 10
+    num = int(num) if is_number(num) and 51 > int(num) > 10 else 10
     rank_image = None
     if cmd[0] in ["胜场排行", "胜利排行"]:
         rank_image = await rank(event.group_id, "win_rank", num)

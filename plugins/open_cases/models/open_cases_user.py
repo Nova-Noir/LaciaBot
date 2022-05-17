@@ -44,16 +44,13 @@ class OpenCasesUser(db.Model):
 
     @classmethod
     async def get_user_all(cls, group_id: int = None) -> 'list':
-        user_list = []
-        if not group_id:
-            query = await cls.query.gino.all()
-        else:
-            query = await cls.query.where(
-                (cls.group_id == group_id)
-            ).gino.all()
-        for user in query:
-            user_list.append(user)
-        return user_list
+        query = (
+            await cls.query.where((cls.group_id == group_id)).gino.all()
+            if group_id
+            else await cls.query.gino.all()
+        )
+
+        return list(query)
 
 
 

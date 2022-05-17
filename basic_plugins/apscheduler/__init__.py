@@ -59,7 +59,7 @@ async def _():
         for g in gl:
             result = image("zao.jpg", "zhenxun")
             try:
-                await bot.send_group_msg(group_id=g, message="[[_task|zwa]]早上好" + result)
+                await bot.send_group_msg(group_id=g, message=f"[[_task|zwa]]早上好{result}")
             except ActionFailed:
                 logger.warning(f"{g} 群被禁言中，无法发送早安")
     except Exception as e:
@@ -81,8 +81,10 @@ async def _():
             result = image("sleep.jpg", "zhenxun")
             try:
                 await bot.send_group_msg(
-                    group_id=g, message=f"[[_task|zwa]]{NICKNAME}要睡觉了，你们也要早点睡呀" + result
+                    group_id=g,
+                    message=f"[[_task|zwa]]{NICKNAME}要睡觉了，你们也要早点睡呀{result}",
                 )
+
             except ActionFailed:
                 logger.warning(f"{g} 群被禁言中，无法发送晚安")
     except Exception as e:
@@ -139,25 +141,26 @@ async def _():
     minute=25,
 )
 async def _():
-    if Config.get_config("_backup", "BACKUP_FLAG"):
-        _backup_path = Path() / 'backup'
-        _backup_path.mkdir(exist_ok=True, parents=True)
-        for x in Config.get_config("_backup", "BACKUP_DIR_OR_FILE"):
-            try:
-                path = Path(x)
-                _p = _backup_path / x
-                if path.exists():
-                    if path.is_dir():
-                        if _p.exists():
-                            shutil.rmtree(_p, ignore_errors=True)
-                        shutil.copytree(x, _p)
-                    else:
-                        if _p.exists():
-                            _p.unlink()
-                        shutil.copy(x, _p)
-                    logger.info(f'已完成自动备份：{x}')
-            except Exception as e:
-                logger.error(f"自动备份文件 {x} 发生错误 {type(e)}:{e}")
+    if not Config.get_config("_backup", "BACKUP_FLAG"):
+        return
+    _backup_path = Path() / 'backup'
+    _backup_path.mkdir(exist_ok=True, parents=True)
+    for x in Config.get_config("_backup", "BACKUP_DIR_OR_FILE"):
+        try:
+            path = Path(x)
+            _p = _backup_path / x
+            if path.exists():
+                if path.is_dir():
+                    if _p.exists():
+                        shutil.rmtree(_p, ignore_errors=True)
+                    shutil.copytree(x, _p)
+                else:
+                    if _p.exists():
+                        _p.unlink()
+                    shutil.copy(x, _p)
+                logger.info(f'已完成自动备份：{x}')
+        except Exception as e:
+            logger.error(f"自动备份文件 {x} 发生错误 {type(e)}:{e}")
 
 
     #  一次性任务

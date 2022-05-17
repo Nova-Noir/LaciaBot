@@ -41,9 +41,11 @@ class Check:
             self.google = 404
 
     def check_user(self):
-        rst = ""
-        for user in psutil.users():
-            rst += f'[{user.name}] {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(user.started))}\n'
+        rst = "".join(
+            f'[{user.name}] {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(user.started))}\n'
+            for user in psutil.users()
+        )
+
         self.user = rst[:-1]
 
     async def show(self):

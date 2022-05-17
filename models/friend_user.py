@@ -22,10 +22,7 @@ class FriendUser(db.Model):
         """
         query = cls.query.where(cls.user_id == user_id)
         user = await query.gino.first()
-        if user:
-            return user.user_name
-        else:
-            return ""
+        return user.user_name if user else ""
 
     @classmethod
     async def add_friend_info(cls, user_id: int, user_name: str) -> bool:
@@ -79,14 +76,12 @@ class FriendUser(db.Model):
         """
         query = cls.query.where(cls.user_id == user_id)
         user = await query.gino.first()
-        if user:
-            if user.nickname:
-                _tmp = ""
-                black_word = Config.get_config("nickname", "BLACK_WORD")
-                if black_word:
-                    for x in user.nickname:
-                        _tmp += "*" if x in black_word else x
-                return _tmp
+        if user and user.nickname:
+            _tmp = ""
+            if black_word := Config.get_config("nickname", "BLACK_WORD"):
+                for x in user.nickname:
+                    _tmp += "*" if x in black_word else x
+            return _tmp
         return ""
 
     @classmethod

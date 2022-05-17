@@ -111,46 +111,47 @@ def get_wear(num: float) -> str:
 
 
 def get_color_quality(rand: float, case_name: str):
-    case = ""
     mosun = random.random()/2 + random.random()/2
-    for i in pypinyin.pinyin(case_name, style=pypinyin.NORMAL):
-        case += ''.join(i)
+    case = "".join(
+        ''.join(i) for i in pypinyin.pinyin(case_name, style=pypinyin.NORMAL)
+    )
+
     case = case.upper()
-    CASE_KNIFE = eval(case + "_CASE_KNIFE")
-    CASE_RED = eval(case + "_CASE_RED")
-    CASE_PINK = eval(case + "_CASE_PINK")
-    CASE_PURPLE = eval(case + "_CASE_PURPLE")
-    CASE_BLUE = eval(case + "_CASE_BLUE")
+    CASE_KNIFE = eval(f"{case}_CASE_KNIFE")
+    CASE_RED = eval(f"{case}_CASE_RED")
+    CASE_PINK = eval(f"{case}_CASE_PINK")
+    CASE_PURPLE = eval(f"{case}_CASE_PURPLE")
+    CASE_BLUE = eval(f"{case}_CASE_BLUE")
     if rand <= KNIFE:
-        skin = "罕见级(金色): " + random.choice(CASE_KNIFE)
+        skin = f"罕见级(金色): {random.choice(CASE_KNIFE)}"
         if random.random() <= KNIFE_ST and (skin[2:4] != "手套" or skin[:2] != "裹手") and skin.split(':')[1] \
                 not in NO_STA_KNIFE:
             skin_sp = skin.split("|")
-            skin = skin_sp[0] + "（StatTrak™） | " + skin_sp[1]
+            skin = f"{skin_sp[0]}（StatTrak™） | {skin_sp[1]}"
     elif KNIFE < rand <= RED:
-        skin = "隐秘级(红色): " + random.choice(CASE_RED)
+        skin = f"隐秘级(红色): {random.choice(CASE_RED)}"
         if random.random() <= RED_ST:
             skin_sp = skin.split("|")
-            skin = skin_sp[0] + "（StatTrak™） | " + skin_sp[1]
+            skin = f"{skin_sp[0]}（StatTrak™） | {skin_sp[1]}"
     elif RED < rand <= PINK:
-        skin = "保密级(粉色): " + random.choice(CASE_PINK)
+        skin = f"保密级(粉色): {random.choice(CASE_PINK)}"
         if random.random() <= PINK_ST:
             skin_sp = skin.split("|")
-            skin = skin_sp[0] + "（StatTrak™） | " + skin_sp[1]
+            skin = f"{skin_sp[0]}（StatTrak™） | {skin_sp[1]}"
     elif PINK < rand <= PURPLE:
-        skin = "受限级(紫色): " + random.choice(CASE_PURPLE)
+        skin = f"受限级(紫色): {random.choice(CASE_PURPLE)}"
         if random.random() <= PURPLE_ST:
             skin_sp = skin.split("|")
-            skin = skin_sp[0] + "（StatTrak™） | " + skin_sp[1]
+            skin = f"{skin_sp[0]}（StatTrak™） | {skin_sp[1]}"
     else:
-        skin = "军规级(蓝色): " + random.choice(CASE_BLUE)
+        skin = f"军规级(蓝色): {random.choice(CASE_BLUE)}"
         if random.random() <= BLUE_ST:
             skin_sp = skin.split("|")
-            skin = skin_sp[0] + "（StatTrak™） | " + skin_sp[1]
+            skin = f"{skin_sp[0]}（StatTrak™） | {skin_sp[1]}"
     if skin.find("（") != -1:
         cpskin = skin.split(":")[1]
         ybskin = cpskin.split("|")
-        temp_skin = ybskin[0].strip()[:-11] + " | " + ybskin[1].strip()
+        temp_skin = f"{ybskin[0].strip()[:-11]} | {ybskin[1].strip()}"
     else:
         temp_skin = skin.split(":")[1].strip()
     # 崭新 -> 略磨
@@ -174,7 +175,7 @@ def get_color_quality(rand: float, case_name: str):
                 else:
                     mosun /= 2
                 break
-    skin += " (" + get_wear(mosun) + ")"
+    skin += f" ({get_wear(mosun)})"
     return skin, mosun
 
 # M249（StatTrak™） | 等高线

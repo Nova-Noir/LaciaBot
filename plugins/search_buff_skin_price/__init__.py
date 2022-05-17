@@ -40,8 +40,7 @@ search_skin = on_command("查询皮肤", aliases={"皮肤查询"}, priority=5, b
 
 @search_skin.handle()
 async def _(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
-    raw_arg = arg.extract_plain_text().strip()
-    if raw_arg:
+    if raw_arg := arg.extract_plain_text().strip():
         args = raw_arg.split()
         if len(args) >= 2:
             state["name"] = args[0]
@@ -56,12 +55,12 @@ async def arg_handle(
     name: str = ArgStr("name"),
     skin: str = ArgStr("skin"),
 ):
-    if name in ["算了", "取消"] or skin in ["算了", "取消"]:
+    if name in {"算了", "取消"} or skin in {"算了", "取消"}:
         await search_skin.finish("已取消操作...")
     result = ""
-    if name in ["ak", "ak47"]:
+    if name in {"ak", "ak47"}:
         name = "ak-47"
-    name = name + " | " + skin
+    name = f"{name} | {skin}"
     try:
         result, status_code = await get_price(name)
     except FileNotFoundError:

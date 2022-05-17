@@ -88,7 +88,7 @@ async def parser_data(
             return ["发生了一些些错误..."], 995
     else:
         return ["网络不太好？没有该页数？也许过一会就好了..."], 998
-    num = num if num < 30 else 30
+    num = min(num, 30)
     _data = []
     for x in data:
         if x["page_count"] < Config.get_config("pixiv_rank_search", "MAX_PAGE_LIMIT"):
@@ -96,17 +96,15 @@ async def parser_data(
         if len(_data) == num:
             break
     for x in _data:
-        if type_ == "search" and r18 == 1:
-            if "R-18" in str(x["tags"]):
-                continue
+        if type_ == "search" and r18 == 1 and "R-18" in str(x["tags"]):
+            continue
         title = x["title"]
         author = x["user"]["name"]
         urls = []
         if x["page_count"] == 1:
             urls.append(x["image_urls"]["large"])
         else:
-            for j in x["meta_pages"]:
-                urls.append(j["image_urls"]["large"])
+            urls.extend(j["image_urls"]["large"] for j in x["meta_pages"])
         info_list.append((title, author, urls))
     return info_list, 200
 
@@ -123,8 +121,7 @@ async def download_pixiv_imgs(
     result = ""
     index = 0
     for url in urls:
-        ws_url = Config.get_config("pixiv", "PIXIV_NGINX_URL")
-        if ws_url:
+        if ws_url := Config.get_config("pixiv", "PIXIV_NGINX_URL"):
             url = (
                 url.replace("i.pximg.net", ws_url)
                 .replace("i.pixiv.cat", ws_url)

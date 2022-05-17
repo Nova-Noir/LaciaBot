@@ -51,11 +51,11 @@ async def check_in_all(nickname: str, user_qq: int):
         present = datetime.now()
         for u in await SignGroupUser.get_user_all_data(user_qq):
             group = u.group_id
-            if not ((
+            if (
                 u.checkin_time_last + timedelta(hours=8)
-            ).date() >= present.date() or f"{u}_{group}_sign_{datetime.now().date()}" in os.listdir(
+            ).date() < present.date() and f"{u}_{group}_sign_{datetime.now().date()}" not in os.listdir(
                 SIGN_TODAY_CARD_PATH
-            )):
+            ):
                 await _handle_check_in(nickname, user_qq, group, present)
 
 
@@ -67,9 +67,7 @@ async def _handle_check_in(
     critx2 = random.random()
     add_probability = user.add_probability
     specify_probability = user.specify_probability
-    if critx2 + add_probability > 0.97:
-        impression_added *= 2
-    elif critx2 < specify_probability:
+    if critx2 + add_probability > 0.97 or critx2 < specify_probability:
         impression_added *= 2
     await SignGroupUser.sign(user, impression_added, present)
     gold = random.randint(1, 100)
@@ -110,13 +108,9 @@ async def group_impression_rank(group: int, num: int) -> Optional[BuildMat]:
 
 
 async def random_gold(user_id, group_id, impression):
-    if impression < 1:
-        impression = 1
+    impression = max(impression, 1)
     gold = random.randint(1, 100) + random.randint(1, int(impression))
-    if await BagUser.add_gold(user_id, group_id, gold):
-        return gold
-    else:
-        return 0
+    return gold if await BagUser.add_gold(user_id, group_id, gold) else 0
 
 
 # 签到总榜
@@ -126,7 +120,7 @@ async def impression_rank(group_id: int, data: dict):
     )
     users, impressions, groups = [], [], []
     num = 0
-    for i in range(105 if len(user_qq_list) > 105 else len(user_qq_list)):
+    for _ in range(min(len(user_qq_list), 105)):
         impression = max(impression_list)
         index = impression_list.index(impression)
         user = user_qq_list[index]
@@ -141,7 +135,7 @@ async def impression_rank(group_id: int, data: dict):
                 groups.append(group)
             else:
                 num += 1
-    for i in range(num):
+    for _ in range(num):
         impression = max(impression_list)
         index = impression_list.index(impression)
         user = user_qq_list[index]
@@ -180,8 +174,8 @@ async def _pst(users: list, impressions: list, groups: list):
                     await GroupInfoUser.get_member_info(user, group)
                 ).user_name
             except AttributeError:
-                user_name = f"我名字呢？"
-            user_name = user_name if len(user_name) < 11 else user_name[:10] + "..."
+                user_name = "我名字呢？"
+            user_name = user_name if len(user_name) < 11 else f"{user_name[:10]}..."
             ava = await get_user_avatar(user)
             if ava:
                 ava = BuildImage(

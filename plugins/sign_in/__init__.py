@@ -107,10 +107,7 @@ async def _(event: GroupMessageEvent):
 @sign_rank.handle()
 async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
     num = arg.extract_plain_text().strip()
-    if is_number(num) and 51 > int(num) > 10:
-        num = int(num)
-    else:
-        num = 10
+    num = int(num) if is_number(num) and 51 > int(num) > 10 else 10
     _image = await group_impression_rank(event.group_id, num)
     if _image:
         await sign_rank.send(image(b64=_image.pic2bs4()))

@@ -40,10 +40,7 @@ async def _(event: GroupMessageEvent):
 @gold_rank.handle()
 async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
     num = arg.extract_plain_text().strip()
-    if is_number(num) and 51 > int(num) > 10:
-        num = int(num)
-    else:
-        num = 10
+    num = int(num) if is_number(num) and 51 > int(num) > 10 else 10
     all_users = await BagUser.get_all_users(event.group_id)
     all_user_id = [user.user_qq for user in all_users]
     all_user_data = [user.gold for user in all_users]

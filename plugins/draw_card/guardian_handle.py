@@ -54,14 +54,12 @@ async def guardian_draw(count: int, pool_name):
     tmp = ''
     if up_type:
         for x in up_type:
-            for operator in x.operators:
-                up_list.append(operator)
+            up_list.extend(iter(x.operators))
             if pool_name == 'char':
                 if x.star == 3:
                     tmp += f'三星UP：{" ".join(x.operators)} \n'
-            else:
-                if x.star == 5:
-                    tmp += f'五星UP：{" ".join(x.operators)}'
+            elif x.star == 5:
+                tmp += f'五星UP：{" ".join(x.operators)}'
     obj_list, obj_dict, max_list, star_list, max_index_list = format_card_information(count, star_list,
                                                                                       _get_guardian_card, pool_name)
     rst = init_star_rst(star_list, cnlist, max_list, max_index_list, up_list)

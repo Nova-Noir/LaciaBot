@@ -65,9 +65,10 @@ class Pixiv(db.Model):
                 img_p=img_p,
                 uid=uid,
                 author=author,
-                is_r18=True if "R-18" in tags else False,
+                is_r18="R-18" in tags,
                 tags=tags,
             )
+
             return True
         return False
 

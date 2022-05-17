@@ -33,9 +33,11 @@ exists_data = {"private": {}, "group": {}}
 @friend_req.handle()
 async def _(bot: Bot, event: FriendRequestEvent):
     global exists_data
-    if exists_data["private"].get(event.user_id):
-        if time.time() - exists_data["private"][event.user_id] < 60 * 5:
-            return
+    if (
+        exists_data["private"].get(event.user_id)
+        and time.time() - exists_data["private"][event.user_id] < 60 * 5
+    ):
+        return
     exists_data["private"][event.user_id] = time.time()
     user = await bot.get_stranger_info(user_id=event.user_id)
     nickname = user["nickname"]
@@ -91,13 +93,14 @@ async def _(bot: Bot, event: GroupRequestEvent):
             user = await bot.get_stranger_info(user_id=event.user_id)
             sex = user["sex"]
             age = str(user["age"])
-            if exists_data["group"].get(f"{event.user_id}:{event.group_id}"):
-                if (
-                    time.time()
-                    - exists_data["group"][f"{event.user_id}:{event.group_id}"]
-                    < 60 * 5
-                ):
-                    return
+            if exists_data["group"].get(
+                f"{event.user_id}:{event.group_id}"
+            ) and (
+                time.time()
+                - exists_data["group"][f"{event.user_id}:{event.group_id}"]
+                < 60 * 5
+            ):
+                return
             exists_data["group"][f"{event.user_id}:{event.group_id}"] = time.time()
             nickname = await FriendUser.get_user_name(event.user_id)
             await bot.send_private_msg(
@@ -127,13 +130,11 @@ async def _(bot: Bot, event: GroupRequestEvent):
 @x.handle()
 async def _(event: MessageEvent):
     await asyncio.sleep(0.1)
-    r = re.search(r'groupcode="(.*?)"', str(event.get_message()))
-    if r:
+    if r := re.search(r'groupcode="(.*?)"', str(event.get_message())):
         group_id = int(r.group(1))
     else:
         return
-    r = re.search(r'groupname="(.*?)"', str(event.get_message()))
-    if r:
+    if r := re.search(r'groupname="(.*?)"', str(event.get_message())):
         group_name = r.group(1)
     else:
         group_name = "None"

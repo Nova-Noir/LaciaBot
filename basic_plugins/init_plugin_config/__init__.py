@@ -32,10 +32,8 @@ def _():
     """
     初始化数据
     """
-    _flag = False
     config_file = DATA_PATH / "configs" / "plugins2config.yaml"
-    if not config_file.exists():
-        _flag = True
+    _flag = not config_file.exists()
     init()
     init_plugins_settings(DATA_PATH)
     init_plugins_cd_limit(DATA_PATH)
@@ -45,8 +43,7 @@ def _():
     init_plugins_config(DATA_PATH)
     init_plugins_resources()
     init_none_plugin_count_manager()
-    x = group_manager.get_super_old_data()
-    if x:
+    if x := group_manager.get_super_old_data():
         for key in x.keys():
             plugins_manager.block_plugin(key, block_type=x[key])
     if _flag:

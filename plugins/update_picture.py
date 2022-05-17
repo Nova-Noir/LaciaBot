@@ -79,9 +79,7 @@ method_str = ""
 method_oper = []
 for i in range(len(method_list)):
     method_str += f"\n{i + 1}.{method_list[i]}"
-    method_oper.append(method_list[i])
-    method_oper.append(str(i + 1))
-
+    method_oper.extend((method_list[i], str(i + 1)))
 update_img_help = BuildImage(960, 700, font_size=24)
 update_img_help.text((10, 10), __plugin_usage__)
 update_img_help.save(IMAGE_PATH / "update_img_help.png")
@@ -137,7 +135,7 @@ def parse_key(key: str):
 
 @update_img.handle()
 async def _(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
-    if str(event.get_message()) in ["帮助"]:
+    if str(event.get_message()) in {"帮助"}:
         await update_img.finish(image("update_img_help.png"))
     raw_arg = arg.extract_plain_text().strip()
     img_list = get_message_img(event.json())
@@ -145,10 +143,9 @@ async def _(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
         args = raw_arg.split("[")[0].split()
         state["method"] = args[0]
         if len(args) == 2:
-            if args[0] in ["等比压缩", "旋转图片"]:
-                if is_number(args[1]):
-                    state["x"] = args[1]
-                    state["y"] = ""
+            if args[0] in ["等比压缩", "旋转图片"] and is_number(args[1]):
+                state["x"] = args[1]
+                state["y"] = ""
         elif len(args) > 2:
             if args[0] in ["修改尺寸"]:
                 if is_number(args[1]):
@@ -197,14 +194,14 @@ async def _(
             await update_img.finish("获取图片超时了...", at_sender=True)
     if index == 0:
         return
-    if method in ["修改尺寸", "1"]:
+    if method in {"修改尺寸", "1"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png")
             img = img.convert("RGB")
             img = img.resize((int(x), int(y)), Image.ANTIALIAS)
             result += image(b64=pic2b64(img))
         await update_img.finish(result, at_sender=True)
-    if method in ["等比压缩", "2"]:
+    if method in {"等比压缩", "2"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png")
             width, height = img.size
@@ -214,47 +211,47 @@ async def _(
                 result += image(b64=pic2b64(img))
             else:
                 await update_img.finish(f"{NICKNAME}不支持图片压缩后宽或高大于8000的存在！！")
-    if method in ["旋转图片", "3"]:
+    if method in {"旋转图片", "3"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png")
             img = img.rotate(x)
             result += image(b64=pic2b64(img))
-    if method in ["水平翻转", "4"]:
+    if method in {"水平翻转", "4"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png")
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
             result += image(b64=pic2b64(img))
-    if method in ["铅笔滤镜", "5"]:
+    if method in {"铅笔滤镜", "5"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png").filter(
                 ImageFilter.CONTOUR
             )
             result += image(b64=pic2b64(img))
-    if method in ["模糊效果", "6"]:
+    if method in {"模糊效果", "6"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"temp/{event.user_id}_{i}_update.png").filter(
                 ImageFilter.BLUR
             )
             result += image(b64=pic2b64(img))
-    if method in ["锐化效果", "7"]:
+    if method in {"锐化效果", "7"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png").filter(
                 ImageFilter.EDGE_ENHANCE
             )
             result += image(b64=pic2b64(img))
-    if method in ["高斯模糊", "8"]:
+    if method in {"高斯模糊", "8"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png").filter(
                 ImageFilter.GaussianBlur
             )
             result += image(b64=pic2b64(img))
-    if method in ["边缘检测", "9"]:
+    if method in {"边缘检测", "9"}:
         for i in range(index):
             img = Image.open(TEMP_PATH / f"{event.user_id}_{i}_update.png").filter(
                 ImageFilter.FIND_EDGES
             )
             result += image(b64=pic2b64(img))
-    if method in ["底色替换", "10"]:
+    if method in {"底色替换", "10"}:
         if x in ["蓝色", "蓝"]:
             lower = np.array([90, 70, 70])
             upper = np.array([110, 255, 255])

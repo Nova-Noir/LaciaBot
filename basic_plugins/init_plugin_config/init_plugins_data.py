@@ -34,8 +34,7 @@ def init_plugins_data(data_path):
                 )
             else:
                 plugins_manager.set_module_data(matcher.plugin_name, "error", True)
-                plugin_data = plugins_manager.get(matcher.plugin_name)
-                if plugin_data:
+                if plugin_data := plugins_manager.get(matcher.plugin_name):
                     plugins_manager.set_module_data(
                         matcher.plugin_name, "version", plugin_data.get("version")
                     )

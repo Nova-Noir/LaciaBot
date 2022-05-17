@@ -72,8 +72,7 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
 
 @del_pic.handle()
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
-    pid_arr = arg.extract_plain_text().strip()
-    if pid_arr:
+    if pid_arr := arg.extract_plain_text().strip():
         msg = ""
         black_pid = ""
         flag = False
@@ -83,27 +82,25 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
             pid_arr = pid_arr[:-1]
         for pid in pid_arr:
             img_p = None
-            if "p" in pid or "ugoira" in pid:
-                if "p" in pid:
-                    img_p = pid.split("p")[-1]
-                    pid = pid.replace("_", "")
-                    pid = pid[: pid.find("p")]
-                elif "ugoira" in pid:
-                    img_p = pid.split("ugoira")[-1]
-                    pid = pid.replace("_", "")
-                    pid = pid[: pid.find("ugoira")]
+            if "p" in pid:
+                img_p = pid.split("p")[-1]
+                pid = pid.replace("_", "")
+                pid = pid[: pid.find("p")]
+            elif "ugoira" in pid:
+                img_p = pid.split("ugoira")[-1]
+                pid = pid.replace("_", "")
+                pid = pid[: pid.find("ugoira")]
             if is_number(pid):
                 if await Pixiv.query_images(pid=int(pid), r18=2):
                     if await remove_image(int(pid), img_p):
                         msg += f'{pid}{f"_p{img_p}" if img_p else ""}，'
-                        if flag:
-                            if await PixivKeywordUser.add_keyword(
-                                114514,
-                                114514,
-                                f"black:{pid}{f'_p{img_p}' if img_p else ''}",
-                                bot.config.superusers,
-                            ):
-                                black_pid += f'{pid}{f"_p{img_p}" if img_p else ""}，'
+                        if flag and await PixivKeywordUser.add_keyword(
+                            114514,
+                            114514,
+                            f"black:{pid}{f'_p{img_p}' if img_p else ''}",
+                            bot.config.superusers,
+                        ):
+                            black_pid += f'{pid}{f"_p{img_p}" if img_p else ""}，'
                         logger.info(
                             f"(USER {event.user_id}, GROUP "
                             f"{event.group_id if isinstance(event, GroupMessageEvent) else 'private'})"
@@ -141,27 +138,28 @@ async def _(bot: Bot, event: MessageEvent, cmd: Tuple[str, ...] = Command(), arg
         elif x.lower().startswith("pid"):
             x = x.replace("pid", "").replace(":", "")
             x = f"pid:{x}"
-        if x.lower().find("pid") != -1 or x.lower().find("uid") != -1:
-            if not is_number(x[4:]):
-                await pass_keyword.send(f"UID/PID：{x} 非全数字，跳过该关键词...")
-                continue
+        if (
+            x.lower().find("pid") != -1 or x.lower().find("uid") != -1
+        ) and not is_number(x[4:]):
+            await pass_keyword.send(f"UID/PID：{x} 非全数字，跳过该关键词...")
+            continue
         user_id, group_id = await PixivKeywordUser.set_keyword_pass(x, flag)
         if not user_id:
             await pass_keyword.send(f"未找到关键词/UID：{x}，请检查关键词/UID是否存在...")
             continue
         if flag:
             if group_id == -1:
-                if not tmp["private"].get(user_id):
-                    tmp["private"][user_id] = {"keyword": [x]}
-                else:
+                if tmp["private"].get(user_id):
                     tmp["private"][user_id]["keyword"].append(x)
+                else:
+                    tmp["private"][user_id] = {"keyword": [x]}
             else:
                 if not tmp["group"].get(group_id):
                     tmp["group"][group_id] = {}
-                if not tmp["group"][group_id].get(user_id):
-                    tmp["group"][group_id][user_id] = {"keyword": [x]}
-                else:
+                if tmp["group"][group_id].get(user_id):
                     tmp["group"][group_id][user_id]["keyword"].append(x)
+                else:
+                    tmp["group"][group_id][user_id] = {"keyword": [x]}
     msg = " ".join(msg)
     await pass_keyword.send(f'已成功{cmd[0][:2]}搜图关键词：{msg}....')
     for user in tmp["private"]:

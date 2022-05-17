@@ -35,14 +35,14 @@ _path = IMAGE_PATH / "image_management"
 
 @move_img.handle()
 async def _(state: T_State, arg: Message = CommandArg()):
-    args = arg.extract_plain_text().strip().split()
-    if args:
+    if args := arg.extract_plain_text().strip().split():
         if n := len(args):
             if args[0] in Config.get_config("image_management", "IMAGE_DIR_LIST"):
                 state["source_path"] = args[0]
-        if n > 1:
-            if args[1] in Config.get_config("image_management", "IMAGE_DIR_LIST"):
-                state["destination_path"] = args[1]
+        if n > 1 and args[1] in Config.get_config(
+            "image_management", "IMAGE_DIR_LIST"
+        ):
+            state["destination_path"] = args[1]
         if n > 2 and is_number(args[2]):
             state["id"] = args[2]
 
@@ -57,9 +57,9 @@ async def _(
     img_id: str = ArgStr("id"),
 ):
     if (
-        source_path in ["取消", "算了"]
-        or img_id in ["取消", "算了"]
-        or destination_path in ["取消", "算了"]
+        source_path in {"取消", "算了"}
+        or img_id in {"取消", "算了"}
+        or destination_path in {"取消", "算了"}
     ):
         await move_img.finish("已取消操作...")
     if source_path not in Config.get_config("image_management", "IMAGE_DIR_LIST"):
@@ -70,12 +70,18 @@ async def _(
         await move_img.reject_arg("id", "id不正确！请重新输入数字...")
     source_path = _path / cn2py(source_path)
     destination_path = _path / cn2py(destination_path)
-    if not source_path.exists():
-        if (source_path.parent.parent / cn2py(source_path.name)).exists():
-            source_path = source_path.parent.parent / cn2py(source_path.name)
-    if not destination_path.exists():
-        if (destination_path.parent.parent / cn2py(destination_path.name)).exists():
-            source_path = destination_path.parent.parent / cn2py(destination_path.name)
+    if (
+        not source_path.exists()
+        and (source_path.parent.parent / cn2py(source_path.name)).exists()
+    ):
+        source_path = source_path.parent.parent / cn2py(source_path.name)
+    if (
+        not destination_path.exists()
+        and (
+            destination_path.parent.parent / cn2py(destination_path.name)
+        ).exists()
+    ):
+        source_path = destination_path.parent.parent / cn2py(destination_path.name)
     source_path.mkdir(exist_ok=True, parents=True)
     destination_path.mkdir(exist_ok=True, parents=True)
     if not len(os.listdir(source_path)):

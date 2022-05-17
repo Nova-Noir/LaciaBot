@@ -81,18 +81,17 @@ fudu = on_message(permission=GROUP, priority=9)
 async def _(event: GroupMessageEvent):
     if event.is_tome():
         return
-    if get_message_text(event.json()):
-        if get_message_text(event.json()).find("@可爱的小真寻") != -1:
-            await fudu.finish("复制粘贴的虚空艾特？", at_sender=True)
+    if (
+        get_message_text(event.json())
+        and get_message_text(event.json()).find("@可爱的小真寻") != -1
+    ):
+        await fudu.finish("复制粘贴的虚空艾特？", at_sender=True)
     img = get_message_img(event.json())
     msg = get_message_text(event.json())
     if not img and not msg:
         return
-    if img:
-        img_hash = await get_fudu_img_hash(img[0], event.group_id)
-    else:
-        img_hash = ""
-    add_msg = msg + "|-|" + img_hash
+    img_hash = await get_fudu_img_hash(img[0], event.group_id) if img else ""
+    add_msg = f"{msg}|-|{img_hash}"
     if _fudu_list.size(event.group_id) == 0:
         _fudu_list.append(event.group_id, add_msg)
     elif _fudu_list.check(event.group_id, add_msg):
@@ -100,25 +99,26 @@ async def _(event: GroupMessageEvent):
     else:
         _fudu_list.clear(event.group_id)
         _fudu_list.append(event.group_id, add_msg)
-    if _fudu_list.size(event.group_id) > 2:
-        if random.random() < Config.get_config(
-            "fudu", "FUDU_PROBABILITY"
-        ) and not _fudu_list.is_repeater(event.group_id):
-            if random.random() < 0.2:
-                await fudu.finish("[[_task|fudu]]打断施法！")
-            _fudu_list.set_repeater(event.group_id)
-            if img and msg:
-                rst = msg + image(f"compare_{event.group_id}_img.jpg", "temp")
-            elif img:
-                rst = image(f"compare_{event.group_id}_img.jpg", "temp")
-            elif msg:
-                rst = msg
-            else:
-                rst = ""
-            if rst:
-                if rst.endswith("打断施法！"):
-                    rst = "打断" + rst
-                await fudu.send("[[_task|fudu]]" + rst)
+    if (
+        _fudu_list.size(event.group_id) > 2
+        and random.random() < Config.get_config("fudu", "FUDU_PROBABILITY")
+        and not _fudu_list.is_repeater(event.group_id)
+    ):
+        if random.random() < 0.2:
+            await fudu.finish("[[_task|fudu]]打断施法！")
+        _fudu_list.set_repeater(event.group_id)
+        if img and msg:
+            rst = msg + image(f"compare_{event.group_id}_img.jpg", "temp")
+        elif img:
+            rst = image(f"compare_{event.group_id}_img.jpg", "temp")
+        elif msg:
+            rst = msg
+        else:
+            rst = ""
+        if rst:
+            if rst.endswith("打断施法！"):
+                rst = f"打断{rst}"
+            await fudu.send(f"[[_task|fudu]]{rst}")
 
 
 async def get_fudu_img_hash(url, group_id):
@@ -129,7 +129,7 @@ async def get_fudu_img_hash(url, group_id):
             img_hash = get_img_hash(TEMP_PATH / f"compare_{group_id}_img.jpg")
             return str(img_hash)
         else:
-            logger.warning(f"复读下载图片失败...")
+            logger.warning("复读下载图片失败...")
     except Exception as e:
         logger.warning(f"复读读取图片Hash出错 {type(e)}：{e}")
         return ""

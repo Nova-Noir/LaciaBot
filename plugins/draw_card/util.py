@@ -68,18 +68,17 @@ async def generate_img(
     background_list = []
     for x in card_set:
         if game_name == "prts":
-            if x.star == 6:
-                background_list.append("#FFD700")
+            if x.star == 4:
+                background_list.append("#9370D8")
             elif x.star == 5:
                 background_list.append("#DAA520")
-            elif x.star == 4:
-                background_list.append("#9370D8")
+            elif x.star == 6:
+                background_list.append("#FFD700")
             else:
                 background_list.append("white")
         img_path = DRAW_IMAGE_PATH / f"{game_name}" / f"{x.star}_star.png"
-        if game_name == "azur":
-            if img_path.exists():
-                background_list.append(str(img_path))
+        if game_name == "azur" and img_path.exists():
+            background_list.append(str(img_path))
         py_name = cn2py(x.name)
         img_list.append(str(DRAW_IMAGE_PATH / f"{game_name}" / f"{py_name}.png"))
     img_len = len(img_list)
@@ -88,15 +87,13 @@ async def generate_img(
         w = 100 * img_len
         h = 100
     elif img_len % 10 == 0:
-        h = 100 * int(img_len / 10)
+        h = 100 * (img_len // 10)
     else:
-        h = 100 * int(img_len / 10) + 100
+        h = 100 * (img_len // 10) + 100
     card_img = await asyncio.get_event_loop().run_in_executor(
         None, _pst, h, img_list, game_name, background_list
     )
-    num = 0
-    for n in star_list:
-        num += n
+    num = sum(star_list)
     A = BuildImage(w, h)
     A.paste(card_img)
     return A.pic2bs4()
@@ -104,8 +101,7 @@ async def generate_img(
 
 def _pst(h: int, img_list: list, game_name: str, background_list: list):
     card_img = BuildImage(100 * 10, h, 100, 100)
-    idx = 0
-    for img in img_list:
+    for idx, img in enumerate(img_list):
         try:
             if game_name == "prts":
                 bk = BuildImage(100, 100, color=background_list[idx])
@@ -129,7 +125,6 @@ def _pst(h: int, img_list: list, game_name: str, background_list: list):
             logger.warning(f"{img} not exists")
             b = BuildImage(100, 100, color="black")
         card_img.paste(b)
-        idx += 1
     return card_img
 
 
@@ -143,11 +138,15 @@ def init_star_rst(
 ) -> str:
     if not up_list:
         up_list = []
-    rst = ""
-    for i in range(len(star_list)):
-        if star_list[i]:
-            rst += f"[{cnlist[i]}×{star_list[i]}] "
-    rst += "\n"
+    rst = (
+        "".join(
+            f"[{cnlist[i]}×{star_list[i]}] "
+            for i in range(len(star_list))
+            if star_list[i]
+        )
+        + "\n"
+    )
+
     for i in range(len(max_star_list)):
         if max_star_list[i] in up_list:
             rst += f"第 {max_star_index_list[i]+1} 抽获取UP {max_star_list[i]}\n"
@@ -166,22 +165,28 @@ def init_rst(
     # print(max_star_char_dict)
     # print(star_num_list)
     # print(up_list)
-    up_list = up_list if up_list else []
-    rst = ""
-    for i in range(len(star_num_list)):
-        if star_num_list[i]:
-            rst += f"[{star[i]}×{star_num_list[i]}] "
-    rst += "\n"
+    up_list = up_list or []
+    rst = (
+        "".join(
+            f"[{star[i]}×{star_num_list[i]}] "
+            for i in range(len(star_num_list))
+            if star_num_list[i]
+        )
+        + "\n"
+    )
+
     _tmp = []
-    for name in max_star_char_dict.keys():
-        _tmp += max_star_char_dict[name]
+    for value_ in max_star_char_dict.values():
+        _tmp += value_
     for index in sorted(_tmp):
-        for name in max_star_char_dict.keys():
-            if index in max_star_char_dict[name]:
-                if name in up_list:
-                    rst += f"第 {index} 抽获取UP {name}\n"
-                else:
-                    rst += f"第 {index} 抽获取 {name}\n"
+        for name, value in max_star_char_dict.items():
+            if index in value:
+                rst += (
+                    f"第 {index} 抽获取UP {name}\n"
+                    if name in up_list
+                    else f"第 {index} 抽获取 {name}\n"
+                )
+
     return rst[:-1] if rst else ""
 
 
@@ -206,12 +211,9 @@ async def init_up_char(announcement):
         tmp += up_char_dict[x]["title"] + "[\n]"
     tmp = tmp.split("[\n]")
     _CURRENT_CHAR_POOL_TITLE = tmp[0]
-    if len(up_char_dict) > 1:
-        _CURRENT_ARMS_POOL_TITLE = tmp[1]
-    else:
-        _CURRENT_ARMS_POOL_TITLE = ""
+    _CURRENT_ARMS_POOL_TITLE = tmp[1] if len(up_char_dict) > 1 else ""
     POOL_IMG = ""
-    x = [x for x in list(up_char_dict.keys())]
+    x = list(list(up_char_dict.keys()))
     if _CURRENT_CHAR_POOL_TITLE:
         POOL_IMG += MessageSegment.image(up_char_dict[x[0]]["pool_img"])
     try:
@@ -224,10 +226,7 @@ async def init_up_char(announcement):
     )
     for key in up_char_dict.keys():
         for star in up_char_dict[key]["up_char"].keys():
-            up_char_lst = []
-            for char in up_char_dict[key]["up_char"][star].keys():
-                up_char_lst.append(char)
-            if up_char_lst:
+            if up_char_lst := list(up_char_dict[key]["up_char"][star].keys()):
                 if key == "char":
                     UP_CHAR.append(
                         UpEvent(star=int(star), operators=up_char_lst, zoom=0)
@@ -293,9 +292,7 @@ def format_card_information(
     max_index_lst = []  # 获取最高星级角色的次数
     obj_list = []  # 获取所有角色
     obj_dict = {}  # 获取角色次数字典
-    _count = -1
-    if guaranteed:
-        _count = 0
+    _count = 0 if guaranteed else -1
     for i in range(count):
         if guaranteed:
             _count += 1
@@ -305,19 +302,18 @@ def format_card_information(
                 _count = 0
             else:
                 obj, code = func(pool_name)
+        elif _count == 10:
+            obj, code = func(mode=2)
+            _count = 0
         else:
-            if _count == 10:
-                obj, code = func(mode=2)
-                _count = 0
-            else:
-                obj, code = func()
+            obj, code = func()
         star_list[code] += 1
         if code == 0:
             max_star_lst.append(obj.name)
             max_index_lst.append(i)
             if guaranteed:
                 _count = 0
-        if code == 1:
+        elif code == 1:
             if guaranteed:
                 _count = 0
         try:
@@ -337,20 +333,17 @@ def check_num(num: str, max_num: int) -> Tuple[str, bool]:
             return "必！须！是！数！字！", False
     if num > max_num:
         return "一井都满不足不了你嘛！快爬开！", False
-    if num < 1:
-        return "虚空抽卡？？？", False
-    else:
-        return str(num), True
+    return ("虚空抽卡？？？", False) if num < 1 else (str(num), True)
 
 
 # 移除windows和linux下特殊字符
 def remove_prohibited_str(name: str) -> str:
     if platform.system().lower() == "windows":
-        tmp = ""
-        for i in name:
-            if i not in ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]:
-                tmp += i
-        name = tmp
+        return "".join(
+            i
+            for i in name
+            if i not in ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
+        )
+
     else:
-        name = name.replace("/", "\\")
-    return name
+        return name.replace("/", "\\")

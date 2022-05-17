@@ -135,35 +135,35 @@ async def _(event: GroupMessageEvent):
             url = str(res.url).split("?")[0]
             bvid = url.split("/")[-1]
             vd_info = await video.Video(bvid=bvid).get_info()
-    if vd_info:
-        if (
-            url in _tmp.keys() and time.time() - _tmp[url] > 30
-        ) or url not in _tmp.keys():
-            _tmp[url] = time.time()
-            aid = vd_info["aid"]
-            title = vd_info["title"]
-            author = vd_info["owner"]["name"]
-            reply = vd_info["stat"]["reply"]  # 回复
-            favorite = vd_info["stat"]["favorite"]  # 收藏
-            coin = vd_info["stat"]["coin"]  # 投币
-            # like = vd_info['stat']['like']      # 点赞
-            # danmu = vd_info['stat']['danmaku']  # 弹幕
-            date = time.strftime("%Y-%m-%d", time.localtime(vd_info["ctime"]))
-            try:
-                await parse_bilibili_json.send(
-                    "[[_task|bilibili_parse]]" +
-                    image(vd_info["pic"]) + f"\nav{aid}\n标题：{title}\n"
-                    f"UP：{author}\n"
-                    f"上传日期：{date}\n"
-                    f"回复：{reply}，收藏：{favorite}，投币：{coin}\n"
-                    f"{url}"
-                )
-            except ActionFailed:
-                logger.warning(f"{event.group_id} 发送bilibili解析失败")
-            else:
-                logger.info(
-                    f"USER {event.user_id} GROUP {event.group_id} 解析bilibili转发 {url}"
-                )
+    if vd_info and (
+        (url in _tmp.keys() and time.time() - _tmp[url] > 30)
+        or url not in _tmp.keys()
+    ):
+        _tmp[url] = time.time()
+        aid = vd_info["aid"]
+        title = vd_info["title"]
+        author = vd_info["owner"]["name"]
+        reply = vd_info["stat"]["reply"]  # 回复
+        favorite = vd_info["stat"]["favorite"]  # 收藏
+        coin = vd_info["stat"]["coin"]  # 投币
+        # like = vd_info['stat']['like']      # 点赞
+        # danmu = vd_info['stat']['danmaku']  # 弹幕
+        date = time.strftime("%Y-%m-%d", time.localtime(vd_info["ctime"]))
+        try:
+            await parse_bilibili_json.send(
+                "[[_task|bilibili_parse]]" +
+                image(vd_info["pic"]) + f"\nav{aid}\n标题：{title}\n"
+                f"UP：{author}\n"
+                f"上传日期：{date}\n"
+                f"回复：{reply}，收藏：{favorite}，投币：{coin}\n"
+                f"{url}"
+            )
+        except ActionFailed:
+            logger.warning(f"{event.group_id} 发送bilibili解析失败")
+        else:
+            logger.info(
+                f"USER {event.user_id} GROUP {event.group_id} 解析bilibili转发 {url}"
+            )
 
 
 def resize(path: str):

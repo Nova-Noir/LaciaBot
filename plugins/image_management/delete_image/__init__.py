@@ -36,8 +36,7 @@ _path = IMAGE_PATH / "image_management"
 
 @delete_img.handle()
 async def _(state: T_State, arg: Message = CommandArg()):
-    args = arg.extract_plain_text().strip().split()
-    if args:
+    if args := arg.extract_plain_text().strip().split():
         if args[0] in Config.get_config("image_management", "IMAGE_DIR_LIST"):
             state["path"] = args[0]
         if len(args) > 1 and is_number(args[1]):
@@ -52,7 +51,7 @@ async def arg_handle(
     path: str = Arg("path"),
     img_id: str = Arg("id"),
 ):
-    if path in ["取消", "算了"] or img_id in ["取消", "算了"]:
+    if path in {"取消", "算了"} or img_id in {"取消", "算了"}:
         await delete_img.finish("已取消操作...")
     if path not in Config.get_config("image_management", "IMAGE_DIR_LIST"):
         await delete_img.reject_arg("path", "此目录不正确，请重新输入目录！")

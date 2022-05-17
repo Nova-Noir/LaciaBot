@@ -47,9 +47,10 @@ async def _():
 async def _(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
     args = arg.extract_plain_text().strip()
     img_list = get_message_img(event.json())
-    if args:
-        if args in Config.get_config("image_management", "IMAGE_DIR_LIST"):
-            state["path"] = args
+    if args and args in Config.get_config(
+        "image_management", "IMAGE_DIR_LIST"
+    ):
+        state["path"] = args
     if img_list:
         state["img_list"] = arg
 
@@ -72,9 +73,7 @@ async def _(
     if not get_message_img(img_list):
         await upload_img.reject_arg("img_list", "图呢图呢图呢图呢！GKD！")
     img_list = get_message_img(img_list)
-    group_id = 0
-    if isinstance(event, GroupMessageEvent):
-        group_id = event.group_id
+    group_id = event.group_id if isinstance(event, GroupMessageEvent) else 0
     await upload_img.send(
         await upload_image_to_local(img_list, path, event.user_id, group_id)
     )
@@ -103,15 +102,11 @@ async def _(
 ):
     if path not in Config.get_config("image_management", "IMAGE_DIR_LIST"):
         await upload_img.reject_arg("path", "此目录不正确，请重新输入目录！")
-    if not img.extract_plain_text() == "stop":
-        img = get_message_img(img)
-        if img:
-            for i in img:
-                img_list.append(i)
+    if img.extract_plain_text() != "stop":
+        if img := get_message_img(img):
+            img_list.extend(iter(img))
         await upload_img.reject_arg("img", "图再来！！【发送‘stop’为停止】")
-    group_id = 0
-    if isinstance(event, GroupMessageEvent):
-        group_id = event.group_id
+    group_id = event.group_id if isinstance(event, GroupMessageEvent) else 0
     await continuous_upload_img.send(
         await upload_image_to_local(img_list, path, event.user_id, group_id)
     )

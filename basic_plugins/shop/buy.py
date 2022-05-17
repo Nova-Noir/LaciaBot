@@ -62,16 +62,15 @@ async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
         if msg > len(goods_name_list) or msg < 1:
             await buy.finish("请输入正确的商品id！", at_sender=True)
         goods = goods_list[msg - 1]
-    else:
-        if msg[0] in goods_name_list:
-            for i in range(len(goods_name_list)):
-                if msg[0] == goods_name_list[i]:
-                    goods = goods_list[i]
-                    break
-            else:
-                await buy.finish("请输入正确的商品名称！")
+    elif msg[0] in goods_name_list:
+        for i in range(len(goods_name_list)):
+            if msg[0] == goods_name_list[i]:
+                goods = goods_list[i]
+                break
         else:
-            await buy.finish("请输入正确的商品名称！", at_sender=True)
+            await buy.finish("请输入正确的商品名称！")
+    else:
+        await buy.finish("请输入正确的商品名称！", at_sender=True)
     async with db.transaction():
         if (
             await BagUser.get_gold(event.user_id, event.group_id)

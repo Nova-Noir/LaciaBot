@@ -23,9 +23,10 @@ async def open_case(user_qq: int, group: int, case_name: str = "狂牙大行动"
     knifes_flag = False
     #          lan   zi   fen   hong   jin  price
     uplist = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0]
-    case = ""
-    for i in pypinyin.pinyin(case_name, style=pypinyin.NORMAL):
-        case += "".join(i)
+    case = "".join(
+        "".join(i) for i in pypinyin.pinyin(case_name, style=pypinyin.NORMAL)
+    )
+
     impression = (await SignGroupUser.ensure(user_qq, group)).impression
     rand = random.random()
     async with db.transaction():
@@ -80,7 +81,7 @@ async def open_case(user_qq: int, group: int, case_name: str = "狂牙大行动"
             )
         if skin.find("（") != -1:
             cskin = skin.split("（")
-            skin = cskin[0].strip() + "（" + cskin[1].strip()
+            skin = f"{cskin[0].strip()}（{cskin[1].strip()}"
         skin = skin.split("|")[0].strip() + " | " + skin.split("|")[1].strip()
         # 价格
         if skin.find("无涂装") == -1:
@@ -121,7 +122,7 @@ async def open_case(user_qq: int, group: int, case_name: str = "狂牙大行动"
         skin_name = cn2py(
             cskin_word.replace("|", "-").replace("（StatTrak™）", "").strip()
         )
-        img = image(f"{skin_name}.png", "cases/" + case)
+        img = image(f"{skin_name}.png", f"cases/{case}")
         #        if knifes_flag:
         #            await user.update(
         #                knifes_name=user.knifes_name + f"{skin} 磨损：{mosun}， 价格：{uplist[10]}"
@@ -141,7 +142,9 @@ async def open_case(user_qq: int, group: int, case_name: str = "狂牙大行动"
             / Config.get_config("open_cases", "EACH_IMPRESSION_ADD_COUNT")
         ) - user.today_open_total
         return (
-            f"开启{case_name}武器箱.\n剩余开箱次数：{over_count}.\n" + img + "\n" + f"皮肤:{skin}\n"
+            f"开启{case_name}武器箱.\n剩余开箱次数：{over_count}.\n{img}"
+            + "\n"
+            + f"皮肤:{skin}\n"
             f"磨损:{mosun:.9f}\n"
             f"价格:{price_result}\n"
             f"{ridicule_result}"
@@ -170,9 +173,9 @@ async def open_shilian_case(user_qq: int, group: int, case_name: str, num: int =
     if num < 5:
         h = 270
     elif num % 5 == 0:
-        h = 270 * int(num / 5)
+        h = 270 * (num // 5)
     else:
-        h = 270 * int(num / 5) + 270
+        h = 270 * (num // 5) + 270
     case = cn2py(case_name)
     #            lan    zi    fen  hong   jin
     # skin_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -213,7 +216,7 @@ async def open_shilian_case(user_qq: int, group: int, case_name: str, num: int =
                     uplist[9] += 1
             if skin.find("（") != -1:
                 cskin = skin.split("（")
-                skin = cskin[0].strip() + "（" + cskin[1].strip()
+                skin = f"{cskin[0].strip()}（{cskin[1].strip()}"
             skin = skin.split("|")[0].strip() + " | " + skin.split("|")[1].strip()
             # 价格
             if skin.find("无涂装") == -1:
@@ -232,12 +235,16 @@ async def open_shilian_case(user_qq: int, group: int, case_name: str, num: int =
                 ).apply()
             cskin_word = skin.split(":")[1].replace("|", "-").replace("（StatTrak™）", "")
             cskin_word = cskin_word[: cskin_word.rfind("(")].strip()
-            skin_name = ""
-            for i in pypinyin.pinyin(
-                cskin_word.replace("|", "-").replace("（StatTrak™）", "").strip(),
-                style=pypinyin.NORMAL,
-            ):
-                skin_name += "".join(i)
+            skin_name = "".join(
+                "".join(i)
+                for i in pypinyin.pinyin(
+                    cskin_word.replace("|", "-")
+                    .replace("（StatTrak™）", "")
+                    .strip(),
+                    style=pypinyin.NORMAL,
+                )
+            )
+
             # img = image(skin_name, "cases/" + case, "png")
             wImg = BuildImage(200, 270, 200, 200)
             wImg.paste(
@@ -270,10 +277,12 @@ async def open_shilian_case(user_qq: int, group: int, case_name: str, num: int =
         None, paste_markImg, h, img_list
     )
     over_count = max_count - user.today_open_total
-    result = ""
-    for i in range(len(name_list)):
-        if uplist[i]:
-            result += f"[{name_list[i]}：{uplist[i]}] "
+    result = "".join(
+        f"[{name_list[i]}：{uplist[i]}] "
+        for i in range(len(name_list))
+        if uplist[i]
+    )
+
     return (
         f"开启{case_name}武器箱\n剩余开箱次数：{over_count}\n"
         + image(b64=markImg.pic2bs4())
@@ -378,24 +387,23 @@ async def group_statistics(group: int):
 
 async def my_knifes_name(user_id: int, group: int):
     knifes_name = (await OpenCasesUser.ensure(user_id, group)).knifes_name
-    if knifes_name:
-        knifes_list = knifes_name[:-1].split(",")
-        length = len(knifes_list)
-        if length < 5:
-            h = 600
-            w = length * 540
-        elif length % 5 == 0:
-            h = 600 * int(length / 5)
-            w = 540 * 5
-        else:
-            h = 600 * int(length / 5) + 600
-            w = 540 * 5
-        A = await asyncio.get_event_loop().run_in_executor(
-            None, _pst_my_knife, w, h, knifes_list
-        )
-        return image(b64=A.pic2bs4())
-    else:
+    if not knifes_name:
         return "您木有开出金色级别的皮肤喔"
+    knifes_list = knifes_name[:-1].split(",")
+    length = len(knifes_list)
+    if length < 5:
+        h = 600
+        w = length * 540
+    elif length % 5 == 0:
+        h = 600 * (length // 5)
+        w = 540 * 5
+    else:
+        h = 600 * (length // 5) + 600
+        w = 540 * 5
+    A = await asyncio.get_event_loop().run_in_executor(
+        None, _pst_my_knife, w, h, knifes_list
+    )
+    return image(b64=A.pic2bs4())
 
 
 def _pst_my_knife(w, h, knifes_list):
@@ -406,24 +414,27 @@ def _pst_my_knife(w, h, knifes_list):
         name = knife[: knife.find("(")].strip()
         itype = knife[knife.find("(") + 1 : knife.find(")")].strip()
         mosun = knife[knife.find("磨损：") + 3 : knife.rfind("价格：")].strip()
-        if mosun[-1] == "," or mosun[-1] == "，":
+        if mosun[-1] in [",", "，"]:
             mosun = mosun[:-1]
         price = knife[knife.find("价格：") + 3 :]
-        skin_name = ""
-        for i in pypinyin.pinyin(
-            name.replace("|", "-").replace("（StatTrak™）", "").strip(),
-            style=pypinyin.NORMAL,
-        ):
-            skin_name += "".join(i)
+        skin_name = "".join(
+            "".join(i)
+            for i in pypinyin.pinyin(
+                name.replace("|", "-").replace("（StatTrak™）", "").strip(),
+                style=pypinyin.NORMAL,
+            )
+        )
+
         knife_img = BuildImage(470, 600, 470, 470, font_size=20)
         knife_img.paste(
             alpha2white_pil(
-                Image.open(IMAGE_PATH / f"cases" / case / f"{skin_name}.png").resize(
-                    (470, 470), Image.ANTIALIAS
-                )
+                Image.open(
+                    IMAGE_PATH / "cases" / case / f"{skin_name}.png"
+                ).resize((470, 470), Image.ANTIALIAS)
             ),
             (0, 0),
         )
+
         knife_img.text((5, 500), f"\t{name}({itype})")
         knife_img.text((5, 530), f"\t磨损：{mosun}")
         knife_img.text((5, 560), f"\t价格：{price}")

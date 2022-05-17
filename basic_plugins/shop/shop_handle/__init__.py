@@ -73,8 +73,7 @@ async def _():
 
 @shop_add_goods.handle()
 async def _(event: MessageEvent, arg: Message = CommandArg()):
-    msg = arg.extract_plain_text().strip()
-    if msg:
+    if msg := arg.extract_plain_text().strip():
         data = parse_goods_info(msg)
         if isinstance(data, str):
             await shop_add_goods.finish(data)
@@ -95,8 +94,7 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
 
 @shop_del_goods.handle()
 async def _(event: MessageEvent, arg: Message = CommandArg()):
-    msg = arg.extract_plain_text().strip()
-    if msg:
+    if msg := arg.extract_plain_text().strip():
         name = ""
         id_ = 0
         if is_number(msg):
@@ -116,8 +114,7 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
 
 @shop_update_goods.handle()
 async def _(event: MessageEvent, arg: Message = CommandArg()):
-    msg = arg.extract_plain_text().strip()
-    if msg:
+    if msg := arg.extract_plain_text().strip():
         data = parse_goods_info(msg)
         if isinstance(data, str):
             await shop_add_goods.finish(data)

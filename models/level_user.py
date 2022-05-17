@@ -23,10 +23,7 @@ class LevelUser(db.Model):
         """
         query = cls.query.where((cls.user_qq == user_qq) & (cls.group_id == group_id))
         user = await query.gino.first()
-        if user:
-            return user.user_level
-        else:
-            return -1
+        return user.user_level if user else -1
 
     @classmethod
     async def set_level(
@@ -70,9 +67,8 @@ class LevelUser(db.Model):
         user = await query.gino.first()
         if user is None:
             return False
-        else:
-            await user.delete()
-            return True
+        await user.delete()
+        return True
 
     @classmethod
     async def check_level(cls, user_qq: int, group_id: int, level: int) -> bool:
@@ -99,10 +95,7 @@ class LevelUser(db.Model):
                 if user.user_level > highest_level:
                     highest_level = user.user_level
             user_level = highest_level
-        if user_level >= level:
-            return True
-        else:
-            return False
+        return user_level >= level
 
     @classmethod
     async def is_group_flag(cls, user_qq: int, group_id: int) -> bool:
@@ -118,7 +111,4 @@ class LevelUser(db.Model):
         ).gino.first()
         if not user:
             return False
-        if user.group_flag == 1:
-            return True
-        else:
-            return False
+        return user.group_flag == 1

@@ -31,9 +31,9 @@ class DrawCountManager:
             for x in range(len(self._guarantee_tuple)):
                 self._data[key][f"count_{x}"] = 0
         else:
-            self._data[key][f"count"] += value
-            if self._data[key][f"count"] > self._guarantee_tuple[-1]:
-                self._data[key][f"count"] = self._data[key][f"count"] % self._guarantee_tuple[-1]
+            self._data[key]["count"] += value
+            if self._data[key]["count"] > self._guarantee_tuple[-1]:
+                self._data[key]["count"] %= self._guarantee_tuple[-1]
 
     def reset(self, key: int):
         """
@@ -83,18 +83,16 @@ class GenshinCountManager(DrawCountManager):
             for x in range(len(self._guarantee_tuple)):
                 self._data[key][f"count_{x}"] = 0
         else:
-            self._data[key][f"count"] += value
-            if self._data[key][f"count"] > self._guarantee_tuple[-1]:
-                self._data[key][f"count"] = self._data[key][f"count"] % 180
+            self._data[key]["count"] += value
+            if self._data[key]["count"] > self._guarantee_tuple[-1]:
+                self._data[key]["count"] %= 180
 
     def set_is_up(self, key: int, value: bool):
         if self._data.get(key):
             self._data[key]["is_up"] = value
 
     def is_up(self, key: int) -> bool:
-        if self._data.get(key):
-            return self._data[key]["is_up"]
-        return False
+        return self._data[key]["is_up"] if self._data.get(key) else False
 
     def check(self, key: int, *args) -> Optional[Union[str, int]]:
         """
@@ -107,7 +105,7 @@ class GenshinCountManager(DrawCountManager):
                 if count - self._data[key][f"count_{i}"] == self._guarantee_tuple[i]:
                     if i in [2, 1]:
                         # print("clean four count")
-                        self._data[key][f"count_0"] = self._data[key]['count']
+                        self._data[key]["count_0"] = self._data[key]['count']
                     self._data[key][f"count_{i}"] = self._data[key]['count']
                     return self._star2name[i]
         return None

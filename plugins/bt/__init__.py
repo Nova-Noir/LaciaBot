@@ -43,14 +43,9 @@ bt = on_command("bt", permission=PRIVATE, priority=5, block=True)
 
 @bt.handle()
 async def _(state: T_State, arg: Message = CommandArg()):
-    msg = arg.extract_plain_text().strip().split()
-    if msg:
-        keyword = None
-        page = 1
-        if n := len(msg):
-            keyword = msg[0]
-        if n > 1 and is_number(msg[1]) and int(msg[1]) > 0:
-            page = int(msg[1])
+    if msg := arg.extract_plain_text().strip().split():
+        keyword = msg[0] if (n := len(msg)) else None
+        page = int(msg[1]) if n > 1 and is_number(msg[1]) and int(msg[1]) > 0 else 1
         state["keyword"] = keyword
         state["page"] = page
     else:
@@ -80,7 +75,7 @@ async def _(
     except TimeoutError:
         await bt.finish(f"搜索 {keyword} 超时...")
     except Exception as e:
-        await bt.finish(f"bt 其他未知错误..")
+        await bt.finish("bt 其他未知错误..")
         logger.error(f"bt 错误 {type(e)}：{e}")
     if not send_flag:
         await bt.send(f"{keyword} 未搜索到...")

@@ -56,9 +56,8 @@ class BanUser(db.Model):
         """
         if await cls.check_ban_time(user_qq):
             return True
-        else:
-            await cls.unban(user_qq)
-            return False
+        await cls.unban(user_qq)
+        return False
 
     @classmethod
     async def is_super_ban(cls, user_qq: int) -> bool:
@@ -114,6 +113,5 @@ class BanUser(db.Model):
         user = await query.gino.first()
         if user is None:
             return False
-        else:
-            await cls.delete.where((cls.user_qq == user_qq)).gino.status()
-            return True
+        await cls.delete.where((cls.user_qq == user_qq)).gino.status()
+        return True

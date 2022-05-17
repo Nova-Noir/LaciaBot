@@ -12,9 +12,10 @@ async def search_song(song_name: str):
     :param song_name: 歌名
     """
     r = await AsyncHttpx.post(
-        f"http://music.163.com/api/search/get/",
+        "http://music.163.com/api/search/get/",
         data={"s": song_name, "limit": 1, "type": 1, "offset": 0},
     )
+
     if r.status_code != 200:
         return None
     return json.loads(r.text)

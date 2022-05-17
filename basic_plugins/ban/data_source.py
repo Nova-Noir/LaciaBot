@@ -15,14 +15,16 @@ def parse_ban_time(msg: str) -> Union[int, str]:
     if not msg:
         return -1
     msg = msg.split()
-    if len(msg) == 1:
-        if not is_number(msg[0].strip()):
-            return "参数必须是数字！"
-        return int(msg[0]) * 60 * 60
-    else:
-        if not is_number(msg[0].strip()) or not is_number(msg[1].strip()):
-            return "参数必须是数字！"
-        return int(msg[0]) * 60 * 60 + int(msg[1]) * 60
+    if len(msg) != 1:
+        return (
+            "参数必须是数字！"
+            if not is_number(msg[0].strip()) or not is_number(msg[1].strip())
+            else int(msg[0]) * 60 * 60 + int(msg[1]) * 60
+        )
+
+    if not is_number(msg[0].strip()):
+        return "参数必须是数字！"
+    return int(msg[0]) * 60 * 60
 
 
 async def a_ban(qq: int, time: int, user_name: str, event: MessageEvent, ban_level: int = None) -> str:
@@ -41,18 +43,12 @@ async def a_ban(qq: int, time: int, user_name: str, event: MessageEvent, ban_lev
             f"USER {event.user_id} GROUP {event.group_id} 将 USER {qq} 封禁 时长 {time / 60} 分钟"
         )
         result = f"已经将 {user_name} 加入{NICKNAME}的黑名单了！"
-        if time != -1:
-            result += f"将在 {time / 60} 分钟后解封"
-        else:
-            result += f"将在 ∞ 分钟后解封"
+        result += f"将在 {time / 60} 分钟后解封" if time != -1 else "将在 ∞ 分钟后解封"
     else:
         time = await BanUser.check_ban_time(qq)
         if is_number(time):
             time = abs(int(time))
-            if time < 60:
-                time = str(time) + " 秒"
-            else:
-                time = str(int(time / 60)) + " 分钟"
+            time = f"{str(time)} 秒" if time < 60 else f"{int(time / 60)} 分钟"
         else:
             time += " 分钟"
         result = f"{user_name} 已在黑名单！预计 {time}后解封"

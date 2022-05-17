@@ -31,8 +31,7 @@ music = on_command("点歌", priority=5, block=True)
 
 @music.handle()
 async def handle_first_receive(state: T_State, arg: Message = CommandArg()):
-    args = arg.extract_plain_text().strip()
-    if args:
+    if args := arg.extract_plain_text().strip():
         state["song_name"] = args
 
 
@@ -50,8 +49,7 @@ async def _(bot: Bot, event: Event, state: T_State):
             f" 点歌 :{song}"
         )
         await music.finish(song_content)
-    else:
-        await music.finish("网易云繁忙...")
+    await music.finish("网易云繁忙...")
 
 
 

@@ -66,12 +66,11 @@ async def genshin_draw(user_id: int, count: int, pool_name: str):
     tmp = ""
     if up_type:
         for x in up_type:
-            for operator in x.operators:
-                up_list.append(operator)
-            if x.star == 5:
-                tmp += f'五星UP：{" ".join(x.operators)} \n'
-            elif x.star == 4:
+            up_list.extend(iter(x.operators))
+            if x.star == 4:
                 tmp += f'四星UP：{" ".join(x.operators)}'
+            elif x.star == 5:
+                tmp += f'五星UP：{" ".join(x.operators)} \n'
     rst = init_rst(five_dict, star_num_list, star, up_list)
     pool_info = f"当前up池：{title}\n{tmp}" if title else ""
     if count > 90:

@@ -356,7 +356,7 @@ class Genshin(db.Model):
         """
         query = cls.query.where(cls.uid == cookie_uid).with_for_update()
         user = await query.gino.first()
-        await user.update(today_query_uid=cls.today_query_uid + f"{uid} ").apply()
+        await user.update(today_query_uid=f"{cls.today_query_uid}{uid} ").apply()
 
     @classmethod
     async def _get_user_data(

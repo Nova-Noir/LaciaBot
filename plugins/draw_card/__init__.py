@@ -122,16 +122,14 @@ onmyoji_update = on_keyword({'更新阴阳师信息'}, permission=SUPERUSER, pri
 @prts.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State, reg: Tuple[Any, ...] = RegexGroup()):
     msg = str(event.get_message()).strip()
-    if msg in ['方舟一井', '方舟1井']:
+    if msg in {'方舟一井', '方舟1井'}:
         num = 300
+    elif rmsg := re.search(r'.*?方舟(.*)[抽|连]', msg):
+        num, flag = check_num(rmsg[1], 300)
+        if not flag:
+            await prts.finish(num, at_sender=True)
     else:
-        rmsg = re.search(r'.*?方舟(.*)[抽|连]', msg)
-        if rmsg:
-            num, flag = check_num(rmsg.group(1), 300)
-            if not flag:
-                await prts.finish(num, at_sender=True)
-        else:
-            return
+        return
     await prts.send(await prts_draw(int(num)), at_sender=True)
 
 
@@ -144,24 +142,22 @@ async def _(bot: Bot, event: MessageEvent, state: T_State):
 @genshin.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State):
     msg = str(event.get_message()).strip()
-    rmsg = re.search(r'.*?原神(武器|角色)?池?(.*)[抽|井|连]', msg)
-    if rmsg:
-        pool_name = rmsg.group(1)
-        if pool_name == '武器':
-            pool_name = 'arms'
-        elif pool_name == '角色':
-            pool_name = 'char'
-        else:
-            pool_name = ''
-        num = rmsg.group(2)
-        if msg.find('一井') != -1 or msg.find('1井') != -1:
-            num = 180
-        else:
-            num, flag = check_num(num, 180)
-            if not flag:
-                await genshin.finish(num, at_sender=True)
-    else:
+    if not (rmsg := re.search(r'.*?原神(武器|角色)?池?(.*)[抽|井|连]', msg)):
         return
+    pool_name = rmsg[1]
+    if pool_name == '武器':
+        pool_name = 'arms'
+    elif pool_name == '角色':
+        pool_name = 'char'
+    else:
+        pool_name = ''
+    num = rmsg[2]
+    if '一井' in msg or '1井' in msg:
+        num = 180
+    else:
+        num, flag = check_num(num, 180)
+        if not flag:
+            await genshin.finish(num, at_sender=True)
     await genshin.send(await genshin_draw(event.user_id, int(num), pool_name), at_sender=True)
 
 
@@ -180,26 +176,21 @@ async def _(bot: Bot, event: MessageEvent, state: T_State):
 @pretty.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State):
     msg = str(event.get_message()).strip()
-    if msg.find('1井') != -1 or msg.find('一井') != -1:
+    if '1井' in msg or '一井' in msg:
         num = 200
-        if msg.find("卡") == -1:
-            pool_name = 'char'
-        else:
+        pool_name = 'char' if "卡" not in msg else 'card'
+    elif rmsg := re.search(r'.*?马娘(.*)[抽|连]', msg):
+        num = rmsg[1]
+        if num[0] == '卡':
+            num = num[1:]
             pool_name = 'card'
-    else:
-        rmsg = re.search(r'.*?马娘(.*)[抽|连]', msg)
-        if rmsg:
-            num = rmsg.group(1)
-            if num[0] == '卡':
-                num = num[1:]
-                pool_name = 'card'
-            else:
-                pool_name = 'char'
-            num, flag = check_num(num, 200)
-            if not flag:
-                await pretty.finish(num, at_sender=True)
         else:
-            return
+            pool_name = 'char'
+        num, flag = check_num(num, 200)
+        if not flag:
+            await pretty.finish(num, at_sender=True)
+    else:
+        return
     await pretty.send(await pretty_draw(int(num), pool_name), at_sender=True)
 
 
@@ -213,22 +204,20 @@ async def _(bot: Bot, event: MessageEvent, state: T_State):
 async def _(bot: Bot, event: MessageEvent, state: T_State):
     msg = str(event.get_message()).strip()
     pool_name = 'char'
-    if msg.find('1井') != -1 or msg.find('一井') != -1:
+    if '1井' in msg or '一井' in msg:
         num = 300
-        if msg.find('武器') != -1:
+        if '武器' in msg:
             pool_name = 'arms'
+    elif rmsg := re.search(r'.*?坎公骑冠剑(.*)[抽|连]', msg):
+        num = rmsg[1]
+        if num.find('武器') != -1:
+            pool_name = 'arms'
+            num = num.replace('武器', '')
+        num, flag = check_num(num, 300)
+        if not flag:
+            await guardian.finish(num, at_sender=True)
     else:
-        rmsg = re.search(r'.*?坎公骑冠剑(.*)[抽|连]', msg)
-        if rmsg:
-            num = rmsg.group(1)
-            if num.find('武器') != -1:
-                pool_name = 'arms'
-                num = num.replace('武器', '')
-            num, flag = check_num(num, 300)
-            if not flag:
-                await guardian.finish(num, at_sender=True)
-        else:
-            return
+        return
     await guardian.send(await guardian_draw(int(num), pool_name), at_sender=True)
 
 
@@ -241,56 +230,48 @@ async def _(bot: Bot, event: MessageEvent, state: T_State):
 @pcr.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State):
     msg = str(event.get_message()).strip()
-    if msg.find('1井') != -1 or msg.find('一井') != -1:
+    if '1井' in msg or '一井' in msg:
         num = 300
+    elif rmsg := re.search(r'.*?(pcr|公主连结)(.*)[抽|井|连]', msg):
+        num, flag = check_num(rmsg[2], 300)
+        if not flag:
+            await pcr.finish(num, at_sender=True)
     else:
-        rmsg = re.search(r'.*?(pcr|公主连结)(.*)[抽|井|连]', msg)
-        if rmsg:
-            num, flag = check_num(rmsg.group(2), 300)
-            if not flag:
-                await pcr.finish(num, at_sender=True)
-        else:
-            return
+        return
     await pcr.send(await pcr_draw(int(num)), at_sender=True)
 
 
 @azur.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State):
     msg = str(event.get_message()).strip()
-    rmsg = re.search(r'.*?碧蓝航?线?(轻型|重型|特型)池?(.*)[抽|连]', msg)
-    if rmsg:
-        pool_name = rmsg.group(1)
-        num, flag = check_num(rmsg.group(2), 300)
-        if not flag:
-            await azur.finish(num, at_sender=True)
-    else:
+    if not (rmsg := re.search(r'.*?碧蓝航?线?(轻型|重型|特型)池?(.*)[抽|连]', msg)):
         return
+    pool_name = rmsg[1]
+    num, flag = check_num(rmsg[2], 300)
+    if not flag:
+        await azur.finish(num, at_sender=True)
     await azur.send(await azur_draw(int(num), pool_name), at_sender=True)
 
 
 @fgo.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State):
     msg = str(event.get_message()).strip()
-    rmsg = re.search(r'.*?fgo(.*)[抽|连]', msg)
-    if rmsg:
-        num, flag = check_num(rmsg.group(1), 300)
-        if not flag:
-            await fgo.finish(num, at_sender=True)
-    else:
+    if not (rmsg := re.search(r'.*?fgo(.*)[抽|连]', msg)):
         return
+    num, flag = check_num(rmsg[1], 300)
+    if not flag:
+        await fgo.finish(num, at_sender=True)
     await fgo.send(await fgo_draw(int(num)), at_sender=True)
 
 
 @onmyoji.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State):
     msg = str(event.get_message()).strip()
-    rmsg = re.search(r'.*?阴阳师(.*)[抽|连]', msg)
-    if rmsg:
-        num, flag = check_num(rmsg.group(1), 300)
-        if not flag:
-            await onmyoji.finish(num, at_sender=True)
-    else:
+    if not (rmsg := re.search(r'.*?阴阳师(.*)[抽|连]', msg)):
         return
+    num, flag = check_num(rmsg[1], 300)
+    if not flag:
+        await onmyoji.finish(num, at_sender=True)
     await onmyoji.send(await onmyoji_draw(int(num)), at_sender=True)
 
 

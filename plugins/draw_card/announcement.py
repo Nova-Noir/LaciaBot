@@ -28,7 +28,10 @@ guardian_url = "https://wiki.biligame.com/gt/%E9%A6%96%E9%A1%B5"
 def is_expired(data: dict):
     times = data['time'].split('-')
     for i in range(len(times)):
-        times[i] = str(datetime.now().year) + '-' + times[i].split('日')[0].strip().replace('月', '-')
+        times[i] = f'{str(datetime.now().year)}-' + times[i].split('日')[
+            0
+        ].strip().replace('月', '-')
+
     start_date = datetime.strptime(times[0], '%Y-%m-%d').date()
     end_date = datetime.strptime(times[1], '%Y-%m-%d').date()
     now = datetime.now().date()
@@ -44,17 +47,13 @@ def check_write(data: dict, up_char_file):
         else:
             with open(up_char_file, 'w', encoding='utf8') as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)
-        if not up_char_file.exists():
-            with open(up_char_file, 'w', encoding='utf8') as f:
-                json.dump(data, f, indent=4, ensure_ascii=False)
-        else:
+        if up_char_file.exists():
             with open(up_char_file, 'r', encoding='utf8') as f:
                 old_data = json.load(f)
             if is_expired(old_data['char']):
                 return old_data
-            else:
-                with open(up_char_file, 'w', encoding='utf8') as f:
-                    json.dump(data, f, indent=4, ensure_ascii=False)
+        with open(up_char_file, 'w', encoding='utf8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
     except ValueError:
         pass
     return data
@@ -87,20 +86,18 @@ class PrtsAnnouncement:
             text = await self._get_announcement_text()
             soup = BeautifulSoup(text, 'lxml')
             content = soup.find('div', {'class': 'article-content'})
-            contents = [x for x in content.contents if x.text or str(x).find('img') != -1]
+            contents = [x for x in content.contents if x.text or 'img' in str(x)]
             start_index = -1
             end_index = -1
             for i in range(len(contents)):
                 if str(contents[i]).startswith('<p>'):
-                    r = re.search('(.*)(寻访|复刻).*?开启', contents[i].text)
-                    if r:
-                        if str(contents[i+3].text).find('★') != -1:
-                            img = contents[i-1].find('img')
-                            if img:
+                    if r := re.search('(.*)(寻访|复刻).*?开启', contents[i].text):
+                        if '★' in str(contents[i + 3].text):
+                            if img := contents[i - 1].find('img'):
                                 data['char']['pool_img'] = img['src']
                             start_index = i
-                            for j in range(i, len(contents)):
-                                if str(contents[j]).find('注意') != -1:
+                            for j in range(start_index, len(contents)):
+                                if '注意' in str(contents[j]):
                                     end_index = j
                                     break
                             break
@@ -111,12 +108,12 @@ class PrtsAnnouncement:
             for p in contents[2:]:
                 p = str(p.text)
                 r = None
-                if p.find('★') != -1:
-                    if p.find('权值') == -1:
+                if '★' in p:
+                    if '权值' not in p:
                         r = re.search(r'.*?：(.*)（占(.*)★.*?的(.*)%）', p)
                     else:
                         r = re.search(r'.*?：(.*)（在(.*)★.*?以(.*)倍权值.*?）', p)
-                    star = r.group(2)
+                    star = r[2]
                 if r:
                     chars = r.group(1)
                     if chars.find('/') != -1:
@@ -132,7 +129,7 @@ class PrtsAnnouncement:
                         if char.strip():
                             data['char']['up_char'][star][char.strip()] = probability
         except TimeoutError:
-            logger.warning(f'更新明日方舟UP池信息超时...')
+            logger.warning('更新明日方舟UP池信息超时...')
             if prts_up_char.exists():
                 with open(prts_up_char, 'r', encoding='utf8') as f:
                     data = json.load(f)
@@ -166,10 +163,7 @@ class GenshinAnnouncement:
             for table in tables:
                 trs = table.find('tbody').find_all('tr')
                 pool_img = trs[0].find('th').find('img')
-                if pool_img['title'].find('角色活动') == -1:
-                    type_ = 'arms'
-                else:
-                    type_ = 'char'
+                type_ = 'arms' if pool_img['title'].find('角色活动') == -1 else 'char'
                 try:
                     data[type_]['pool_img'] = str(pool_img['srcset']).split(' ')[0]
                 except KeyError:
@@ -187,7 +181,7 @@ class GenshinAnnouncement:
                 for tm in data[type_]['time'].split('~'):
                     date_time_sp = tm.split('/')
                     date_time_sp[2] = date_time_sp[2].strip().replace(' ', '日 ')
-                    tmp += date_time_sp[1] + '月' + date_time_sp[2] + ' - '
+                    tmp += f'{date_time_sp[1]}月{date_time_sp[2]} - '
                 data[type_]['time'] = tmp[:-2].strip()
                 for a in trs[2].find('td').find_all('a'):
                     char_name = a['title']
@@ -196,7 +190,7 @@ class GenshinAnnouncement:
                     char_name = a['title']
                     data[type_]['up_char']['4'][char_name] = "50"
         except TimeoutError:
-            logger.warning(f'更新原神UP池信息超时...')
+            logger.warning('更新原神UP池信息超时...')
             if genshin_up_char.exists():
                 with open(genshin_up_char, 'r', encoding='utf8') as f:
                     data = json.load(f)

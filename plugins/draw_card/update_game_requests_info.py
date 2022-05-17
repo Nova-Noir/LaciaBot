@@ -23,7 +23,7 @@ async def update_requests_info(game_name: str):
     except (ValueError, FileNotFoundError):
         data = {}
     try:
-        if game_name in ['fgo', 'fgo_card']:
+        if game_name in {'fgo', 'fgo_card'}:
             if game_name == 'fgo':
                 url = 'http://fgo.vgtime.com/servant/ajax?card=&wd=&ids=&sort=12777&o=desc&pn='
             else:
@@ -78,7 +78,7 @@ def add_to_data(data: dict, x: dict, game_name: str) -> dict:
             'card_buster': x['cardbuster'],
             '宝具': x['tprop'],
         }
-    if game_name == 'fgo_card':
+    elif game_name == 'fgo_card':
         member_dict = {
             'id': x['id'],
             'card_id': x['equipid'],
@@ -89,7 +89,7 @@ def add_to_data(data: dict, x: dict, game_name: str) -> dict:
             'atk': x['lvmax_atk'],
             'skill_e': x['skill_e'].split('<br />')[: -1],
         }
-    if game_name == 'onmyoji':
+    elif game_name == 'onmyoji':
         member_dict = {
             'id': x['id'],
             '名称': x['name'],
@@ -102,23 +102,26 @@ def add_to_data(data: dict, x: dict, game_name: str) -> dict:
 # 获取额外数据
 async def _last_check(data: dict, game_name: str) -> dict:
     if game_name == 'fgo':
-        url = 'http://fgo.vgtime.com/servant/'
-        tasks = []
         semaphore = asyncio.Semaphore(draw_config.SEMAPHORE)
-        for key in data.keys():
-            tasks.append(asyncio.ensure_future(
-                _async_update_fgo_extra_info(url, key, data[key]['id'], semaphore)))
+        url = 'http://fgo.vgtime.com/servant/'
+        tasks = [
+            asyncio.ensure_future(
+                _async_update_fgo_extra_info(url, key, value['id'], semaphore)
+            )
+            for key, value in data.items()
+        ]
+
         result = await asyncio.gather(*tasks)
         for x in result:
             for key in x.keys():
                 data[key]['入手方式'] = x[key]['入手方式']
-    if game_name == 'onmyoji':
+    elif game_name == 'onmyoji':
         url = 'https://yys.163.com/shishen/{}.html'
-        for key in data.keys():
+        for key, value_ in data.items():
             response = await AsyncHttpx.get(f'{url.format(data[key]["id"])}', timeout=7)
             soup = BeautifulSoup(response.text, 'lxml')
             data[key]['头像'] = "https:" + soup.find('div', {'class': 'pic_wrap'}).find('img')['src']
-            await download_img(data[key]['头像'], game_name, key)
+            await download_img(value_['头像'], game_name, key)
     return data
 
 
@@ -134,11 +137,10 @@ async def _async_update_fgo_extra_info(url: str, key: str, _id: str, semaphore):
                     obtain = ['活动获取']
                 elif obtain.find('非限时UP无法获得') != -1:
                     obtain = ['限时召唤']
+                elif obtain.find('&') == -1:
+                    obtain = obtain.strip().split(' ')
                 else:
-                    if obtain.find('&') != -1:
-                        obtain = obtain.strip().split('&')
-                    else:
-                        obtain = obtain.strip().split(' ')
+                    obtain = obtain.strip().split('&')
                 logger.info(f'Fgo获取额外信息 {key}....{obtain}')
                 x = {key: {}}
                 x[key]['入手方式'] = obtain

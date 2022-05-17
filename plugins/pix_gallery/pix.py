@@ -80,17 +80,15 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
         nsfw_tag = 0
     if nsfw_tag != 0 and str(event.user_id) not in bot.config.superusers:
         await pix.finish("你不能看这些噢，这些都是是留给管理员看的...")
-    if len(x) > 1:
-        if is_number(x[-1]):
-            num = int(x[-1])
-            if num > 10:
-                if str(event.user_id) not in bot.config.superusers or (
-                        str(event.user_id) in bot.config.superusers and num > 30
-                ):
-                    num = random.randint(1, 10)
-                    await pix.send(f"太贪心了，就给你发 {num}张 好了")
-            x = x[:-1]
-            keyword = " ".join(x)
+    if len(x) > 1 and is_number(x[-1]):
+        num = int(x[-1])
+        if num > 10 and (
+            str(event.user_id) not in bot.config.superusers or num > 30
+        ):
+            num = random.randint(1, 10)
+            await pix.send(f"太贪心了，就给你发 {num}张 好了")
+        x = x[:-1]
+        keyword = " ".join(x)
     pix_num = int(num * PIX_RATIO) + 15 if PIX_RATIO != 0 else 0
     omega_num = num - pix_num + 15
     if is_number(keyword):

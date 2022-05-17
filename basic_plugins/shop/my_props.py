@@ -32,9 +32,7 @@ my_props = on_command("我的道具", priority=5, block=True, permission=GROUP)
 async def _(event: GroupMessageEvent):
     props = await BagUser.get_property(event.user_id, event.group_id)
     if props:
-        rst = ""
-        for i, p in enumerate(props.keys()):
-            rst += f"{i+1}.{p}\t×{props[p]}\n"
+        rst = "".join(f"{i+1}.{p}\t×{props[p]}\n" for i, p in enumerate(props.keys()))
         await my_props.send("\n" + rst[:-1], at_sender=True)
         logger.info(f"USER {event.user_id} GROUP {event.group_id} 查看我的道具")
     else:

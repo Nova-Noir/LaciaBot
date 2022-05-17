@@ -240,15 +240,15 @@ def get_home_data_image(home_data_list: List[Dict]) -> BuildImage:
             (0, region.h - 70), f'仙力: {home_data_list[0]["comfort_num"]}', center_type="by_width"
         )
     except (IndexError, KeyError):
-        region.text((0, 30), f"尘歌壶 Lv.0", center_type="by_width")
-        region.text((0, region.h - 70), f"仙力: 0", center_type="by_width")
+        region.text((0, 30), "尘歌壶 Lv.0", center_type="by_width")
+        region.text((0, region.h - 70), "仙力: 0", center_type="by_width")
     region.circle_corner(30)
     height = 100
     homes = os.listdir(image_path / "homes")
     homes.remove("lock.png")
     homes.sort()
     unlock_home = [x["name"] for x in home_data_list]
-    for i, file in enumerate(homes):
+    for file in homes:
         home_img = image_path / "homes" / file
         x = BuildImage(500, 250, background=home_img)
         if file.split(".")[0] not in unlock_home:
@@ -386,12 +386,10 @@ def get_char_data_image(
     )
     width = 120
     height = 0
-    idx = 0
     for char in char_data_list:
-        if width + 230 > 1550:
+        if width > 1320:
             width = 120
             height += 420
-        idx += 1
         char_img = image_path / "chars" / f'{char["name"]}.png'
         char_bk = BuildImage(
             270,
@@ -530,7 +528,7 @@ async def init_image(world_data_dict: Dict[str, Dict[str, str]], char_data_list:
         file.parent.mkdir(parents=True, exist_ok=True)
         if not file.exists():
             await AsyncHttpx.download_file(char["image"], file)
-    for char in char_detailed_dict.keys():
+    for char in char_detailed_dict:
         file = image_path / "weapons" / f'{char_detailed_dict[char]["weapon"]}.png'
         file.parent.mkdir(parents=True, exist_ok=True)
         if not file.exists():

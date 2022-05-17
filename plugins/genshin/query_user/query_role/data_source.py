@@ -17,7 +17,7 @@ async def query_role_data(
     user_id: int, uid: int, mys_id: Optional[str] = None, nickname: Optional[str] = None
 ) -> Optional[Union[MessageSegment, str]]:
     uid = str(uid)
-    if uid[0] == "1" or uid[0] == "2":
+    if uid[0] in ["1", "2"]:
         server_id = "cn_gf01"
     elif uid[0] == "5":
         server_id = "cn_qd01"

@@ -24,7 +24,7 @@ async def get_bt_info(keyword: str, page: int):
     soup = BeautifulSoup(text, "lxml")
     item_lst = soup.find_all("div", {"class": "search-item"})
     bt_max_num = Config.get_config("bt", "BT_MAX_NUM")
-    bt_max_num = bt_max_num if bt_max_num < len(item_lst) else len(item_lst)
+    bt_max_num = min(bt_max_num, len(item_lst))
     for item in item_lst[:bt_max_num]:
         divs = item.find_all("div")
         title = (

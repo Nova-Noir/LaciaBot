@@ -88,10 +88,7 @@ class SignGroupUser(db.Model):
         impression_list = []
         user_qq_list = []
         user_group = []
-        if group_id:
-            query = cls.query.where(cls.group_id == group_id)
-        else:
-            query = cls.query
+        query = cls.query.where(cls.group_id == group_id) if group_id else cls.query
         for user in await query.gino.all():
             impression_list.append(user.impression)
             user_qq_list.append(user.user_qq)

@@ -36,9 +36,8 @@ luxun_author = BuildImage(0, 0, plain_text="--鲁迅", font_size=30, font='msyh.
 
 @luxun.handle()
 async def handle(state: T_State, arg: Message = CommandArg()):
-    args = arg.extract_plain_text().strip()
-    if args:
-        state["content"] = args if args else "烦了，不说了"
+    if args := arg.extract_plain_text().strip():
+        state["content"] = args or "烦了，不说了"
 
 
 @luxun.got("content", prompt="你让鲁迅说点啥?")
@@ -51,7 +50,7 @@ async def handle_event(event: MessageEvent, state: T_State):
     if len(content) > 40:
         await luxun.finish('太长了，鲁迅说不完...')
     while A.getsize(content)[0] > A.w - 50:
-        n = int(len(content) / 2)
+        n = len(content) // 2
         x += content[:n] + '\n'
         content = content[n:]
     x += content

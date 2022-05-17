@@ -27,7 +27,7 @@ class PixivKeywordUser(db.Model):
             :param keyword: 关键词
             :param superusers: 是否为超级用户
         """
-        is_pass = True if str(user_qq) in superusers else False
+        is_pass = str(user_qq) in superusers
         if not await cls._check_keyword_exists(keyword):
             await cls.create(
                 user_qq=user_qq, group_id=group_id, keyword=keyword, is_pass=is_pass
@@ -104,11 +104,8 @@ class PixivKeywordUser(db.Model):
         说明：
             获取黑名单PID
         """
-        black_pid = []
         query = await cls.query.where(cls.user_qq == 114514).gino.all()
-        for image in query:
-            black_pid.append(image.keyword[6:])
-        return black_pid
+        return [image.keyword[6:] for image in query]
 
     @classmethod
     async def _check_keyword_exists(cls, keyword: str) -> bool:
@@ -118,10 +115,8 @@ class PixivKeywordUser(db.Model):
         参数：
             :param keyword: 关键词
         """
-        current_keyword = []
         query = await cls.query.gino.all()
-        for user in query:
-            current_keyword.append(user.keyword)
+        current_keyword = [user.keyword for user in query]
         if keyword in current_keyword:
             return True
         return False

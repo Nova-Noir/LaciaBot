@@ -83,13 +83,11 @@ class GroupInfoUser(db.Model):
         query = query.with_for_update()
         user = await query.gino.first()
         try:
-            if user is None:
-                return True
-            else:
+            if user is not None:
                 await cls.delete.where(
                     (cls.user_qq == user_qq) & (cls.group_id == group_id)
                 ).gino.status()
-                return True
+            return True
         except Exception:
             return False
 
@@ -154,14 +152,12 @@ class GroupInfoUser(db.Model):
             (cls.user_qq == user_qq) & (cls.group_id == group_id)
         )
         user = await query.gino.first()
-        if user:
-            if user.nickname:
-                _tmp = ""
-                black_word = Config.get_config("nickname", "BLACK_WORD")
-                if black_word:
-                    for x in user.nickname:
-                        _tmp += "*" if x in black_word else x
-                return _tmp
+        if user and user.nickname:
+            _tmp = ""
+            if black_word := Config.get_config("nickname", "BLACK_WORD"):
+                for x in user.nickname:
+                    _tmp += "*" if x in black_word else x
+            return _tmp
         return ""
 
     @classmethod
@@ -178,18 +174,17 @@ class GroupInfoUser(db.Model):
             for x in all_user:
                 if x.uid:
                     return x.uid
-            else:
-                if not user:
-                    await GroupInfoUser.add_member_info(user_qq, group_id, '', datetime.min)
-                    user = await cls.query.where(
-                        (cls.user_qq == user_qq) & (cls.group_id == group_id)
-                    ).gino.first()
-                await user.update(
-                    uid=_max_uid + 1,
-                ).apply()
-                await _max_uid_user.update(
-                    uid=_max_uid + 1,
-                ).apply()
+            if not user:
+                await GroupInfoUser.add_member_info(user_qq, group_id, '', datetime.min)
+                user = await cls.query.where(
+                    (cls.user_qq == user_qq) & (cls.group_id == group_id)
+                ).gino.first()
+            await user.update(
+                uid=_max_uid + 1,
+            ).apply()
+            await _max_uid_user.update(
+                uid=_max_uid + 1,
+            ).apply()
 
         return user.uid if user and user.uid else None
 

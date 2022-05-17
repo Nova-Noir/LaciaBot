@@ -31,10 +31,10 @@ async def update_info(url: str, game_name: str, info_list: list = None) -> Tuple
         _tbody = get_tbody(soup, game_name, url)
         trs = _tbody.find_all('tr')
         att_dict, start_index, index = init_attr(game_name)
-        if game_name == 'guardian':
-            start_index = 1
         if game_name == 'azur':
             start_index = 0
+        elif game_name == 'guardian':
+            start_index = 1
         for th in trs[0].find_all('th')[start_index:]:
             text = th.text
             if text[-1] == '\n':
@@ -53,7 +53,7 @@ async def update_info(url: str, game_name: str, info_list: list = None) -> Tuple
                 member_dict[key] = last_tag
                 member_dict = intermediate_check(member_dict, key, game_name, td)
             avatar_img = await _modify_avatar_url(game_name, member_dict["名称"])
-            member_dict['头像'] = avatar_img if avatar_img else member_dict['头像']
+            member_dict['头像'] = avatar_img or member_dict['头像']
             member_dict, name = replace_update_name(member_dict, game_name)
             await download_img(member_dict['头像'], game_name, name)
             data[name] = member_dict
@@ -68,9 +68,7 @@ async def update_info(url: str, game_name: str, info_list: list = None) -> Tuple
 
 
 def _find_last_tag(element: bs4.element.Tag, attr: str, game_name: str) -> str:
-    last_tag = []
-    for des in element.descendants:
-        last_tag.append(des)
+    last_tag = list(element.descendants)
     if len(last_tag) == 1 and last_tag[0] == '\n':
         last_tag = ''
     elif last_tag[-1] == '\n':
@@ -79,7 +77,7 @@ def _find_last_tag(element: bs4.element.Tag, attr: str, game_name: str) -> str:
         last_tag = last_tag[-1]
     if attr and str(last_tag):
         last_tag = last_tag[attr]
-    elif str(last_tag).find('<img') != -1:
+    elif '<img' in str(last_tag):
         if last_tag.get('srcset'):
             last_tag = str(last_tag.get('srcset')).strip().split(' ')[-2].strip()
         else:
@@ -143,64 +141,45 @@ async def _last_check(data: dict, game_name: str):
     #         for key in x.keys():
     #             data[key]['获取途径'] = x[key]['获取途径']
     if game_name == 'genshin':
-        for key in data.keys():
+        for key, value__ in data.items():
             res = await AsyncHttpx.get(f'https://wiki.biligame.com/ys/{key}', timeout=7)
             soup = BeautifulSoup(res.text, 'lxml')
-            _trs = ''
-            for table in soup.find_all('table', {'class': 'wikitable'}):
-                if str(table).find('常驻/限定') != -1:
-                    _trs = table.find('tbody').find_all('tr')
-                    break
+            _trs = next(
+                (
+                    table.find('tbody').find_all('tr')
+                    for table in soup.find_all('table', {'class': 'wikitable'})
+                    if '常驻/限定' in str(table)
+                ),
+                '',
+            )
+
             for tr in _trs:
                 data[key]['常驻/限定'] = '未知'
-                if str(tr).find('限定UP') != -1:
+                if '限定UP' in str(tr):
                     data[key]['常驻/限定'] = '限定UP'
                     logger.info(f'原神获取额外数据 {key}...{data[key]["常驻/限定"]}')
                     break
-                elif str(tr).find('常驻UP') != -1:
+                elif '常驻UP' in str(tr):
                     data[key]['常驻/限定'] = '常驻UP'
-                    logger.info(f'原神获取额外数据 {key}...{data[key]["常驻/限定"]}')
+                    logger.info(f"原神获取额外数据 {key}...{value__['常驻/限定']}")
                     break
-    if game_name == 'pretty':
-        for keys in data.keys():
+    elif game_name == 'guardian':
+        for keys, value_ in data.items():
+            for key in value_.keys():
+                if r := re.search(r'.*?-star_(.*).png', str(data[keys][key])):
+                    data[keys][key] = r[1]
+                    logger.info(f'坎公骑士剑额外修改数据...{keys}[{key}] => {r[1]}')
+    elif game_name == 'pretty':
+        for keys, value in data.items():
             for key in data[keys].keys():
-                r = re.search(r'.*?40px-(.*)图标.png', str(data[keys][key]))
-                if r:
-                    data[keys][key] = r.group(1)
-                    logger.info(f'赛马娘额外修改数据...{keys}[{key}]=> {r.group(1)}')
-    if game_name == 'guardian':
-        for keys in data.keys():
-            for key in data[keys].keys():
-                r = re.search(r'.*?-star_(.*).png', str(data[keys][key]))
-                if r:
-                    data[keys][key] = r.group(1)
-                    logger.info(f'坎公骑士剑额外修改数据...{keys}[{key}] => {r.group(1)}')
+                if r := re.search(r'.*?40px-(.*)图标.png', str(value[key])):
+                    data[keys][key] = r[1]
+                    logger.info(f'赛马娘额外修改数据...{keys}[{key}]=> {r[1]}')
     return data
 
 
 # 对抓取每行数据是否需要额外处理？
 def intermediate_check(member_dict: dict, key: str, game_name: str, td: bs4.element.Tag):
-    if game_name == "genshin_arms":
-        if key == "稀有度":
-            member_dict["稀有度"] = td.find("img")["alt"].split('.')[0]
-    if game_name == 'prts':
-        if key == '获取途径':
-            msg = re.search('<td.*?>([\\s\\S]*)</td>', str(td)).group(1).strip()
-            msg = msg[:-1] if msg and msg[-1] == '\n' else msg
-            if msg.find('<a') != -1:
-                for a in td.find_all('a'):
-                    msg = msg.replace(str(a), a.text)
-            member_dict['获取途径'] = msg.split('<br/>')
-    if game_name == 'pretty':
-        if key == '初始星级':
-            member_dict['初始星级'] = len(td.find_all('img'))
-    if game_name == 'pretty_card':
-        if key == '获取方式':
-            obtain = []
-            for x in str(td.text).replace('\n', '').strip().split('、'):
-                if x:
-                    obtain.append(x)
-            member_dict['获取方式'] = obtain
     if game_name == 'guardian':
         if key == '头像':
             member_dict['星级'] = str(td.find('span').find('img')['alt'])[-5]
@@ -208,6 +187,24 @@ def intermediate_check(member_dict: dict, key: str, game_name: str, td: bs4.elem
                 member_dict['头像'] = str(td.find('img')['srcset']).split(' ')[0]
             except KeyError:
                 member_dict['头像'] = str(td.find('img')['src'])
+    elif game_name == 'pretty':
+        if key == '初始星级':
+            member_dict['初始星级'] = len(td.find_all('img'))
+    elif game_name == 'pretty_card':
+        if key == '获取方式':
+            obtain = [x for x in str(td.text).replace('\n', '').strip().split('、') if x]
+            member_dict['获取方式'] = obtain
+    elif game_name == 'prts':
+        if key == '获取途径':
+            msg = re.search('<td.*?>([\\s\\S]*)</td>', str(td))[1].strip()
+            msg = msg[:-1] if msg and msg[-1] == '\n' else msg
+            if msg.find('<a') != -1:
+                for a in td.find_all('a'):
+                    msg = msg.replace(str(a), a.text)
+            member_dict['获取途径'] = msg.split('<br/>')
+    elif game_name == "genshin_arms":
+        if key == "稀有度":
+            member_dict["稀有度"] = td.find("img")["alt"].split('.')[0]
     return member_dict
 
 
@@ -225,11 +222,10 @@ def init_attr(game_name: str):
 # 解析key
 def parse_key(key: str, game_name):
     attr = ''
-    if game_name == 'genshin_arms':
-        if key.find('.') != -1:
-            key = key.split('.')
-            attr = key[-1]
-            key = key[0]
+    if game_name == 'genshin_arms' and '.' in key:
+        key = key.split('.')
+        attr = key[-1]
+        key = key[0]
     return key, attr
 
 
@@ -251,7 +247,7 @@ def get_tbody(soup: bs4.BeautifulSoup, game_name: str, url: str):
     max_count = 0
     _tbody = None
     if game_name == 'guardian_arms':
-        if url[-2:] == '盾牌':
+        if url.endswith('盾牌'):
             div = soup.find('div', {'class': 'resp-tabs-container'}).find_all('div', {'class': 'resp-tab-content'})[1]
             _tbody = div.find('tbody')
         else:

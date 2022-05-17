@@ -95,7 +95,7 @@ async def _(event: MessageEvent, cmd: Tuple[str, ...] = Command()):
         else:
             await Genshin.set_auto_sign(uid, False)
             await Genshin.clear_sign_time(uid)
-            await genshin_matcher.send(f"已关闭原神自动签到！", at_sender=True)
+            await genshin_matcher.send("已关闭原神自动签到！", at_sender=True)
             logger.info(
                 f"(USER {event.user_id}, GROUP "
                 f"{event.group_id if isinstance(event, GroupMessageEvent) else 'private'})"
