@@ -20,8 +20,7 @@ message_handle = on_message(priority=6, block=True, rule=check)
 @message_handle.handle()
 async def _(event: GroupMessageEvent):
     msg = event.raw_message
-    list_img = get_message_img_file(event.json())
-    if list_img:
+    if list_img := get_message_img_file(event.json()):
         for img_file in list_img:
             strinfo = re.compile(f"{img_file},subType=\d*]")
             msg = strinfo.sub(f'{img_file}]', msg)
@@ -53,13 +52,12 @@ async def get_one_answer(event, format, _answer, all=1):
                 answer += _a[: _a.find(f"[__placeholder_{idx}]")] + image(
                     path / placeholder
                 )
+            elif all == 1:
+                answer += _a[: _a.find(f"[__placeholder_{idx}]")] + at(placeholder)
             else:
-                if all == 1:
-                    answer += _a[: _a.find(f"[__placeholder_{idx}]")] + at(placeholder)
-                else:
-                    q = await GroupInfoUser.get_member_info(
-                        int(placeholder), event.group_id)
-                    answer += _a[: _a.find(f"[__placeholder_{idx}]")] + "@" + q.user_name
+                q = await GroupInfoUser.get_member_info(
+                    int(placeholder), event.group_id)
+                answer += _a[: _a.find(f"[__placeholder_{idx}]")] + "@" + q.user_name
             _a = _a[_a.find(f"[__placeholder_{idx}]") + len(f"[__placeholder_{idx}]"):]
     return answer + _a
 
@@ -73,18 +71,19 @@ async def get_one_problem(event, problem):
     problem = ''
     for img in get_message_img(event.json()):
         _x = img.split("?")[0]
-        r = re.search(rf"\[CQ:image,file=(.*),url={_x}.*?]", _p)
-        if r:
+        if r := re.search(rf"\[CQ:image,file=(.*),url={_x}.*?]", _p):
             _problem = _problem.replace(
                 rf",url={img}",
                 f"",
             )
-            problem += _p[: _p.find(f"[CQ:image,file={r.group(1)},url={img}]")] + image(img)
+            problem += _p[:_p.find(f"[CQ:image,file={r[1]},url={img}]")] + image(img)
             _p = _p[
-                 _p.find(f"[CQ:image,file={r.group(1)},url={img}]") + len(f"[CQ:image,file={r.group(1)},url={img}]"):]
+                _p.find(f"[CQ:image,file={r[1]},url={img}]")
+                + len(f"[CQ:image,file={r[1]},url={img}]") :
+            ]
+
     for at_ in get_message_at(event.json()):
-        r = re.search(rf"\[CQ:at,qq={at_}]", problem)
-        if r:
+        if r := re.search(rf"\[CQ:at,qq={at_}]", problem):
             q = await GroupInfoUser.get_member_info(
                 int(at_), event.group_id)
             problem += _p[: _p.find(f"[CQ:at,qq={at_}]")] + "@" + q.user_name

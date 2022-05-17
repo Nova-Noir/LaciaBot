@@ -200,7 +200,7 @@ async def _punish_handle(
         warning_result = await _get_punish(5, user_id, group_id)
         await BlackWord.set_user_punish(user_id, f"口头警告：{warning_result}", black_word)
     else:
-        await BlackWord.set_user_punish(user_id, f"提示！", black_word)
+        await BlackWord.set_user_punish(user_id, "提示！", black_word)
         await send_msg(
             user_id,
             group_id,

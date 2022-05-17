@@ -181,15 +181,13 @@ async def get_media_id(keyword: str) -> dict:
                 if data.get("data"):
                     for item in data["data"]["result"]:
                         if item["result_type"] == "media_bangumi":
-                            idx = 0
-                            for x in item["data"]:
+                            for idx, x in enumerate(item["data"]):
                                 _season_data[idx] = {
                                     "media_id": x["media_id"],
                                     "title": x["title"]
                                     .replace('<em class="keyword">', "")
                                     .replace("</em>", ""),
                                 }
-                                idx += 1
                             return _season_data
         except TimeoutError:
             pass
@@ -376,12 +374,12 @@ class SubManager:
                 _up_data,
                 _season_data,
             ) = await BilibiliSub.get_all_sub_data()
-            if not self.live_data:
-                self.live_data = _live_data
-            if not self.up_data:
-                self.up_data = _up_data
-            if not self.season_data:
-                self.season_data = _season_data
+        if not self.live_data:
+            self.live_data = _live_data
+        if not self.up_data:
+            self.up_data = _up_data
+        if not self.season_data:
+            self.season_data = _season_data
 
     async def random_sub_data(self) -> Optional[BilibiliSub]:
         """

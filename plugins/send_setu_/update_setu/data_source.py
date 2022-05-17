@@ -111,8 +111,7 @@ async def update_setu_img(flag: bool = False):
             if temp_file.exists():
                 temp_file.unlink()
             url_ = image.img_url
-            ws_url = Config.get_config("pixiv", "PIXIV_NGINX_URL")
-            if ws_url:
+            if ws_url := Config.get_config("pixiv", "PIXIV_NGINX_URL"):
                 url_ = url_.replace("i.pximg.net", ws_url).replace(
                     "i.pixiv.cat", ws_url
                 )

@@ -19,9 +19,7 @@ class Plugins2settingsManager(StaticData):
                 self._data = yaml.load(f)
         if self._data:
             if "PluginSettings" in self._data.keys():
-                self._data = (
-                    self._data["PluginSettings"] if self._data["PluginSettings"] else {}
-                )
+                self._data = self._data["PluginSettings"] or {}
             for x in self._data.keys():
                 if self._data[x].get("cost_gold") is None:
                     self._data[x]["cost_gold"] = 0
@@ -79,9 +77,7 @@ class Plugins2settingsManager(StaticData):
         通过模块名获取数据
         :param module: 模块名称
         """
-        if self._data.get(module) is not None:
-            return self._data.get(module)
-        return {}
+        return self._data.get(module) if self._data.get(module) is not None else {}
 
     def get_plugin_module(
         self, cmd: str, is_all: bool = False

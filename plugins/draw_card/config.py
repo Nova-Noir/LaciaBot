@@ -11,7 +11,6 @@ except ModuleNotFoundError:
     import json
 
 
-# 原神
 class GenshinConfig(BaseModel, extra=Extra.ignore):
     GENSHIN_FIVE_P: float = 0.006
     GENSHIN_FOUR_P: float = 0.051
@@ -21,7 +20,6 @@ class GenshinConfig(BaseModel, extra=Extra.ignore):
     I72_ADD: float = 0.0585
 
 
-# 明日方舟
 class PrtsConfig(BaseModel, extra=Extra.ignore):
     PRTS_SIX_P: float = 0.02
     PRTS_FIVE_P: float = 0.08
@@ -29,14 +27,12 @@ class PrtsConfig(BaseModel, extra=Extra.ignore):
     PRTS_THREE_P: float = 0.42
 
 
-# 赛马娘
 class PrettyConfig(BaseModel, extra=Extra.ignore):
     PRETTY_THREE_P: float = 0.03
     PRETTY_TWO_P: float = 0.18
     PRETTY_ONE_P: float = 0.79
 
 
-# 坎公骑冠剑
 class GuardianConfig(BaseModel, extra=Extra.ignore):
     GUARDIAN_THREE_CHAR_P: float = 0.0275
     GUARDIAN_TWO_CHAR_P: float = 0.19
@@ -52,7 +48,6 @@ class GuardianConfig(BaseModel, extra=Extra.ignore):
     GUARDIAN_EXCLUSIVE_ARMS_OTHER_P: float = 0.02
 
 
-# 公主连结
 class PcrConfig(BaseModel, extra=Extra.ignore):
     PCR_THREE_P: float = 0.025
     PCR_TWO_P: float = 0.18
@@ -61,7 +56,6 @@ class PcrConfig(BaseModel, extra=Extra.ignore):
     PCR_G_TWO_P: float = 0.975
 
 
-# 碧蓝航线
 class AzurConfig(BaseModel, extra=Extra.ignore):
     AZUR_FIVE_P: float = 0.012
     AZUR_FOUR_P: float = 0.07
@@ -70,7 +64,6 @@ class AzurConfig(BaseModel, extra=Extra.ignore):
     AZUR_ONE_P: float = 0.3
 
 
-# 命运-冠位指定
 class FgoConfig(BaseModel, extra=Extra.ignore):
     FGO_SERVANT_FIVE_P: float = 0.01
     FGO_SERVANT_FOUR_P: float = 0.03
@@ -80,7 +73,6 @@ class FgoConfig(BaseModel, extra=Extra.ignore):
     FGO_CARD_THREE_P: float = 0.4
 
 
-# 阴阳师
 class OnmyojiConfig(BaseModel, extra=Extra.ignore):
     ONMYOJI_SP: float = 0.0025
     ONMYOJI_SSR: float = 0.01
@@ -145,7 +137,7 @@ for game_flag, game_name in zip(
         default_value=True,
     )
 AConfig.add_plugin_config(
-    "draw_card", "SEMAPHORE", 5, help_=f"异步数据下载数量限制", default_value=5
+    "draw_card", "SEMAPHORE", 5, help_="异步数据下载数量限制", default_value=5
 )
 
 

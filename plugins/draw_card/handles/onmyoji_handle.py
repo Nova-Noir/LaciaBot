@@ -104,7 +104,7 @@ class OnmyojiHandle(BaseHandle[OnmyojiChar]):
         bg.paste(label, (0, 135), alpha=True)
         font = load_font("msyh.ttf", 16)
         draw = ImageDraw.Draw(bg.markImg)
-        text = "\n".join([t for t in card.name[:4]])
+        text = "\n".join(list(card.name[:4]))
         _, text_h = font.getsize_multiline(text, spacing=0)
         draw.text(
             (40, 150 + (90 - text_h) / 2), text, font=font, fill="gray", spacing=0
@@ -116,8 +116,7 @@ class OnmyojiHandle(BaseHandle[OnmyojiChar]):
             OnmyojiChar(
                 name=value["名称"],
                 star=["N", "R", "SR", "SSR", "SP"].index(value["星级"]) + 1,
-                limited=True
-                if key
+                limited=key
                 in [
                     "奴良陆生",
                     "卖药郎",
@@ -131,8 +130,7 @@ class OnmyojiHandle(BaseHandle[OnmyojiChar]):
                     "黑崎一护",
                     "灶门祢豆子",
                     "灶门炭治郎",
-                ]
-                else False,
+                ],
             )
             for key, value in self.load_data().items()
         ]
@@ -155,7 +153,7 @@ class OnmyojiHandle(BaseHandle[OnmyojiChar]):
             info[name] = member_dict
             # logger.info(f"{name} is update...")
         # 更新头像
-        for key in info.keys():
+        for key in info:
             url = f'https://yys.163.com/shishen/{info[key]["id"]}.html'
             result = await self.get_url(url)
             if not result:
@@ -164,7 +162,7 @@ class OnmyojiHandle(BaseHandle[OnmyojiChar]):
             try:
                 dom = etree.HTML(result, etree.HTMLParser())
                 avatar = dom.xpath("//div[@class='pic_wrap']/img/@src")[0]
-                avatar = "https:" + avatar
+                avatar = f"https:{avatar}"
                 info[key]["头像"] = avatar
             except IndexError:
                 info[key]["头像"] = ""

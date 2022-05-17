@@ -88,12 +88,11 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     elif n > 1:
         if is_number(x[-1]):
             num = int(x[-1])
-            if num > 10:
-                if str(event.user_id) not in bot.config.superusers or (
-                    str(event.user_id) in bot.config.superusers and num > 30
-                ):
-                    num = random.randint(1, 10)
-                    await pix.send(f"太贪心了，就给你发 {num}张 好了")
+            if num > 10 and (
+                str(event.user_id) not in bot.config.superusers or num > 30
+            ):
+                num = random.randint(1, 10)
+                await pix.send(f"太贪心了，就给你发 {num}张 好了")
             x = x[:-1]
             keyword = " ".join(x)
     pix_num = int(num * PIX_RATIO) + 15 if PIX_RATIO != 0 else 0

@@ -49,7 +49,7 @@ class Setu(db.Model):
                 pid=pid,
                 img_hash=img_hash,
                 img_url=img_url,
-                is_r18=True if "R-18" in tags else False,
+                is_r18="R-18" in tags,
                 tags=tags,
             )
 
@@ -71,7 +71,7 @@ class Setu(db.Model):
             :param limit: 获取数量
         """
         if local_id:
-            flag = True if r18 == 1 else False
+            flag = r18 == 1
             return await cls.query.where(
                 (cls.local_id == local_id) & (cls.is_r18 == flag)
             ).gino.first()
@@ -93,7 +93,7 @@ class Setu(db.Model):
         说明：
             查询图片数量
         """
-        flag = False if r18 == 0 else True
+        flag = r18 != 0
         setattr(Setu, 'count', db.func.count(cls.local_id).label('count'))
         count = await cls.select('count').where(cls.is_r18 == flag).gino.first()
         return count[0]

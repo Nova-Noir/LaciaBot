@@ -83,7 +83,7 @@ async def _(bot: Bot, event: GroupMessageEvent, state: T_State, arg: Message = C
     idx = 0
     for n in bot.config.nickname:
         if n and problem.startswith(n):
-            _problem = f"[_to_me|{n}]" + problem[len(n):]
+            _problem = f"[_to_me|{n}]{problem[len(n):]}"
             break
     else:
         _problem = problem
@@ -95,7 +95,7 @@ async def _(bot: Bot, event: GroupMessageEvent, state: T_State, arg: Message = C
     _builder = await get__builder(event, _problem, answer, idx)
     if await _builder.save(search_type):
         logger.info(f"已保存词条 问：{_builder.problem} 答：{msg}")
-        await add_word.send("已保存词条：" + _builder.problem)
+        await add_word.send(f"已保存词条：{_builder.problem}")
     else:
         await delete_word.send("保存失败，可能是回答重复")
 
@@ -107,10 +107,9 @@ async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
         await delete_word.finish("此命令之后需要跟随指定词条，通过“显示词条“查看")
     index = None
     _sp_msg = msg.split()
-    if len(_sp_msg) > 1:
-        if is_number(_sp_msg[-1]):
-            index = int(_sp_msg[-1])
-            msg = " ".join(_sp_msg[:-1])
+    if len(_sp_msg) > 1 and is_number(_sp_msg[-1]):
+        index = int(_sp_msg[-1])
+        msg = " ".join(_sp_msg[:-1])
     problem = msg
     if problem.startswith("id:"):
         x = problem.split(":")[-1]
@@ -124,14 +123,14 @@ async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
         if answer := await WordBank.delete_problem_answer(
                 event.user_id, event.group_id, _problem, index
         ):
-            await delete_word.send("删除词条成功：" + problem + f"\n回答：\n{answer}")
+            await delete_word.send(f"删除词条成功：{problem}" + f"\n回答：\n{answer}")
             logger.info(
                 f"(USER {event.user_id}, GROUP "
                 f"{event.group_id if isinstance(event, GroupMessageEvent) else 'private'})"
                 f" 删除词条: {problem}"
             )
         else:
-            await delete_word.send("删除词条：" + problem + "失败，可能该词条不存在")
+            await delete_word.send(f"删除词条：{problem}失败，可能该词条不存在")
     except IndexError:
         await delete_word.send("指定下标错误...请通过查看词条来确定..")
 
@@ -146,7 +145,7 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
     problem = None
     _sp_msg = msg.split()
     len_msg = len(_sp_msg)
-    if 1 < len_msg:
+    if len_msg > 1:
         problem = "".join(_sp_msg[0])
         if len_msg == 3:
             if is_number(_sp_msg[1]):
@@ -157,76 +156,34 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
     else:
         await update_word.finish("此命令之后需要跟随修改内容")
     idx = 0
-    for n in bot.config.nickname:
-        if n and problem.startswith(n):
-            _problem = f"[_to_me|{n}]" + problem[len(n):]
-            break
-    else:
-        _problem = problem
+    _problem = next(
+        (
+            f"[_to_me|{n}]{problem[len(n):]}"
+            for n in bot.config.nickname
+            if n and problem.startswith(n)
+        ),
+        problem,
+    )
+
     _builder = await get__builder(event, _problem, new_answer, idx)
 
     try:
         if await _builder.update(index):
-            await update_word.send(f"修改词条成功：" + _builder.problem)
+            await update_word.send(f"修改词条成功：{_builder.problem}")
             logger.info(
                 f"(USER {event.user_id}, GROUP "
                 f"{event.group_id if isinstance(event, GroupMessageEvent) else 'private'})"
                 f" 修改词条: {problem}"
             )
         else:
-            await update_word.send(f"修改词条：" + _builder.problem + f"失败，可能该词条不存在")
+            await update_word.send(f"修改词条：{_builder.problem}失败，可能该词条不存在")
     except IndexError:
         await update_word.send("指定下标错误...请通过查看词条来确定..")
 
 
 @show_word.handle()
 async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
-    msg = str(arg).strip()
-    if not msg:
-        _problem_list = await WordBank.get_group_all_problem(event.group_id)
-        if not _problem_list:
-            await show_word.finish("该群未收录任何词条..")
-        _problem_list = [f"\t{i}. {x}" for i, x in enumerate(_problem_list)]
-        long_problem_list = len(_problem_list)
-        max_line = Config.get_config("word_bank", "WORD_BANK_MIX")
-        if long_problem_list > max_line:
-            pic_list = []
-            mes_list = []
-            img_nu = long_problem_list // max_line
-            one_msg = "该群已收录的词条："
-            await show_word.send(one_msg)
-            for i in range(img_nu + 1):
-                if _problem_list:
-                    one_img = image(
-                        b64=(await text2image("\n".join(_problem_list[:max_line]),
-                                              padding=10,
-                                              color="#f9f6f2",
-                                              )).pic2bs4()
-                    )
-                    if img_nu > 2:
-                        pic_list.append(one_img)
-                    else:
-                        await show_word.send(one_img)
-                del _problem_list[:max_line]
-            if pic_list:
-                for img in pic_list:
-                    data = {
-                        "type": "node",
-                        "data": {"name": f"{NICKNAME}", "uin": f"{bot.self_id}", "content": img},
-                    }
-                    mes_list.append(data)
-                await bot.send_group_forward_msg(group_id=event.group_id, messages=mes_list)
-        else:
-            await show_word.send(
-                image(
-                    b64=(await text2image(
-                        "该群已收录的词条：\n\n" + "\n".join(_problem_list),
-                        padding=10,
-                        color="#f9f6f2",
-                    )).pic2bs4()
-                )
-            )
-    else:
+    if msg := str(arg).strip():
         _answer_list = []
         if msg.startswith("id:"):
             x = msg.split(":")[-1]
@@ -248,10 +205,9 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
             _answer_img_nu_list = [await get_one_answer(event, format, answer, 0) for answer, format in _answer_list]
             word_nu = len(_answer_img_nu_list)
             img_nu = 0
-            answer = "词条" + msg + "回答："
+            answer = f"词条{msg}回答："
             for i, x, in enumerate(_answer_img_nu_list):
-                r = re.findall(rf"\[CQ:image,file=", str(x))
-                if r:
+                if r := re.findall(rf"\[CQ:image,file=", str(x)):
                     img_nu += len(r)
                 answer += "\n" + f"{i}." + x
             if (img_nu > 2 and word_nu > 5) or word_nu > 10 or img_nu > 4:
@@ -262,6 +218,50 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
                 await bot.send_group_forward_msg(group_id=event.group_id, messages=data)
             else:
                 await show_word.send(answer)
+
+    else:
+        _problem_list = await WordBank.get_group_all_problem(event.group_id)
+        if not _problem_list:
+            await show_word.finish("该群未收录任何词条..")
+        _problem_list = [f"\t{i}. {x}" for i, x in enumerate(_problem_list)]
+        long_problem_list = len(_problem_list)
+        max_line = Config.get_config("word_bank", "WORD_BANK_MIX")
+        if long_problem_list > max_line:
+            pic_list = []
+            img_nu = long_problem_list // max_line
+            await show_word.send("该群已收录的词条：")
+            for _ in range(img_nu + 1):
+                if _problem_list:
+                    one_img = image(
+                        b64=(await text2image("\n".join(_problem_list[:max_line]),
+                                              padding=10,
+                                              color="#f9f6f2",
+                                              )).pic2bs4()
+                    )
+                    if img_nu > 2:
+                        pic_list.append(one_img)
+                    else:
+                        await show_word.send(one_img)
+                del _problem_list[:max_line]
+            if pic_list:
+                mes_list = []
+                for img in pic_list:
+                    data = {
+                        "type": "node",
+                        "data": {"name": f"{NICKNAME}", "uin": f"{bot.self_id}", "content": img},
+                    }
+                    mes_list.append(data)
+                await bot.send_group_forward_msg(group_id=event.group_id, messages=mes_list)
+        else:
+            await show_word.send(
+                image(
+                    b64=(await text2image(
+                        "该群已收录的词条：\n\n" + "\n".join(_problem_list),
+                        padding=10,
+                        color="#f9f6f2",
+                    )).pic2bs4()
+                )
+            )
             # await show_word.send(f"词条 {msg} 回答：\n" + "\n".join(_answer_list))
 
 
@@ -272,13 +272,11 @@ async def get__builder(event, _problem, answer, idx):
     problem = ''
     _p = _problem
     for at_ in get_message_at(event.json()):
-        r = re.search(rf"\[CQ:at,qq={at_}]", answer)
-        if r:
+        if r := re.search(rf"\[CQ:at,qq={at_}]", answer):
             answer = answer.replace(f"[CQ:at,qq={at_}]", f"[__placeholder_{idx}]", 1)
             _builder.set_placeholder(idx, at_)
             idx += 1
-        r_problem = re.search(rf"\[CQ:at,qq={at_}]", _problem)
-        if r_problem:
+        if r_problem := re.search(rf"\[CQ:at,qq={at_}]", _problem):
             q = await GroupInfoUser.get_member_info(
                 int(at_), event.group_id)
             problem += _p[: _p.find(f"[CQ:at,qq={at_}]")] + "@" + q.user_name
@@ -286,8 +284,7 @@ async def get__builder(event, _problem, answer, idx):
     for img in get_message_img(event.json()):
         _x = img.split("?")[0]
         _x_list = img.split("?")
-        r = re.search(rf"\[CQ:image,file=(.*),url={_x}.*?]", answer)
-        if r:
+        if r := re.search(rf"\[CQ:image,file=(.*),url={_x}.*?]", answer):
             rand = random.randint(1, 10000) + random.randint(1, 114514)
             for _ in range(10):
                 if f"__placeholder_{rand}_{idx}.jpg" not in os.listdir(data_dir / f"{event.group_id}"):
@@ -300,18 +297,24 @@ async def get__builder(event, _problem, answer, idx):
             )
             _builder.set_placeholder(idx, f"__placeholder_{rand}_{idx}.jpg")
             idx += 1
-        r_problem = re.search(rf"\[CQ:image,file=(.*?),url={_x}.*?]", _p)
-        if r_problem:
+        if r_problem := re.search(rf"\[CQ:image,file=(.*?),url={_x}.*?]", _p):
             strinfo = re.compile(f",url={_x_list[0]}\?{_x_list[1]},subType=\d*?]")
-            _problem = strinfo.sub(f"]", _problem)
-            _p = strinfo.sub(f"]", _p)
+            _problem = strinfo.sub("]", _problem)
+            _p = strinfo.sub("]", _p)
             problem += _p[: _p.find(f"[CQ:image,file={r_problem.group(1)}]")] + image(img)
             _p = _p[_p.find(f"[CQ:image,file={r_problem.group(1)}]") + len(f"[CQ:image,file={r_problem.group(1)}]"):]
             problem_img = r_problem.group(1)
-            if f"{problem_img}.jpg" not in os.listdir(data_dir / f"{event.group_id}" / f"problem"):
+            if f"{problem_img}.jpg" not in os.listdir(
+                data_dir / f"{event.group_id}" / "problem"
+            ):
                 await AsyncHttpx.download_file(
-                    img, data_dir / f"{event.group_id}" / f"problem" / f"{problem_img}.jpg"
+                    img,
+                    data_dir
+                    / f"{event.group_id}"
+                    / "problem"
+                    / f"{problem_img}.jpg",
                 )
+
     _builder.set_answer(answer)
     _builder.set_problem(_problem)
     _builder.problem = problem + _p

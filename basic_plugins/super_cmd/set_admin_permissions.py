@@ -64,10 +64,9 @@ async def _(
                     qq = int(args[0])
                     group_id = int(args[1])
                     level = int(args[2])
-            else:
-                if len(args) > 1 and is_number(args[0]) and is_number(args[1]):
-                    qq = int(args[0])
-                    group_id = int(args[1])
+            elif len(args) > 1 and is_number(args[0]) and is_number(args[1]):
+                qq = int(args[0])
+                group_id = int(args[1])
             flag = 1
         level = -1 if cmd[0][:2] == "删除" else level
         if group_id == -1 or not level or not qq:
@@ -76,18 +75,17 @@ async def _(
         await super_cmd.finish(__plugin_usage__)
     try:
         if cmd[0][:2] == "添加":
-            if await LevelUser.set_level(qq, group_id, level, 1):
-                result = f"添加管理成功, 权限: {level}"
-            else:
-                result = f"管理已存在, 更新权限: {level}"
+            result = (
+                f"添加管理成功, 权限: {level}"
+                if await LevelUser.set_level(qq, group_id, level, 1)
+                else f"管理已存在, 更新权限: {level}"
+            )
+
+        elif await LevelUser.delete_level(qq, event.group_id):
+            result = "删除管理成功!"
         else:
-            if await LevelUser.delete_level(qq, event.group_id):
-                result = "删除管理成功!"
-            else:
-                result = "该账号无管理权限!"
-        if flag == 2:
-            await super_cmd.send(result)
-        elif flag == 1:
+            result = "该账号无管理权限!"
+        if flag == 1:
             await bot.send_group_msg(
                 group_id=group_id,
                 message=Message(
@@ -96,6 +94,8 @@ async def _(
                 ),
             )
             await super_cmd.send("修改成功")
+        elif flag == 2:
+            await super_cmd.send(result)
     except Exception as e:
         await super_cmd.send("执行指令失败!")
         logger.error(f"执行指令失败 e：{e}")

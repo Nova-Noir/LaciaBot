@@ -101,7 +101,7 @@ class FgoHandle(BaseHandle[FgoData]):
         img = BuildImage(w, h, background=img_path)
         bg.paste(img, (sep_w, sep_t), alpha=True)
         # 加名字
-        text = card.name[:6] + "..." if len(card.name) > 7 else card.name
+        text = f"{card.name[:6]}..." if len(card.name) > 7 else card.name
         font = load_font(fontsize=16)
         text_w, text_h = font.getsize(text)
         draw = ImageDraw.Draw(bg.markImg)
@@ -118,12 +118,12 @@ class FgoHandle(BaseHandle[FgoData]):
             FgoChar(
                 name=value["名称"],
                 star=int(value["星级"]),
-                limited=True
-                if not ("圣晶石召唤" in value["入手方式"] or "圣晶石召唤（Story卡池）" in value["入手方式"])
-                else False,
+                limited="圣晶石召唤" not in value["入手方式"]
+                and "圣晶石召唤（Story卡池）" not in value["入手方式"],
             )
             for value in self.load_data().values()
         ]
+
         self.ALL_CARD = [
             FgoCard(name=value["名称"], star=int(value["星级"]), limited=False)
             for value in self.load_data("fgo_card.json").values()
@@ -159,7 +159,7 @@ class FgoHandle(BaseHandle[FgoData]):
                 }
                 fgo_info[name] = member_dict
         # 更新额外信息
-        for key in fgo_info.keys():
+        for key in fgo_info:
             url = f'http://fgo.vgtime.com/servant/{fgo_info[key]["id"]}'
             result = await self.get_url(url)
             if not result:
@@ -177,10 +177,7 @@ class FgoHandle(BaseHandle[FgoData]):
                 elif "非限时UP无法获得" in obtain:
                     obtain = ["限时召唤"]
                 else:
-                    if "&" in obtain:
-                        obtain = obtain.split("&")
-                    else:
-                        obtain = obtain.split(" ")
+                    obtain = obtain.split("&") if "&" in obtain else obtain.split(" ")
                 obtain = [s.strip() for s in obtain if s.strip()]
                 fgo_info[key]["入手方式"] = obtain
             except IndexError:

@@ -35,10 +35,7 @@ def compare_image_with_hash(
     dif = hash_1 - hash_2
     if dif < 0:
         dif = -dif
-    if dif <= max_dif:
-        return True
-    else:
-        return False
+    return dif <= max_dif
 
 
 def get_img_hash(image_file: Union[str, Path]) -> ImageHash:
@@ -105,7 +102,7 @@ def pic2b64(pic: Image) -> str:
     buf = BytesIO()
     pic.save(buf, format="PNG")
     base64_str = base64.b64encode(buf.getvalue()).decode()
-    return "base64://" + base64_str
+    return f"base64://{base64_str}"
 
 
 def fig2b64(plt_: plt) -> str:
@@ -118,7 +115,7 @@ def fig2b64(plt_: plt) -> str:
     buf = BytesIO()
     plt_.savefig(buf, format="PNG", dpi=100)
     base64_str = base64.b64encode(buf.getvalue()).decode()
-    return "base64://" + base64_str
+    return f"base64://{base64_str}"
 
 
 def is_valid(file: str) -> bool:
@@ -172,13 +169,13 @@ class BuildImage:
             :param is_alpha: 是否背景透明
             :param plain_text: 纯文字文本
         """
-        self.w = int(w)
-        self.h = int(h)
-        self.paste_image_width = int(paste_image_width)
-        self.paste_image_height = int(paste_image_height)
+        self.w = w
+        self.h = h
+        self.paste_image_width = paste_image_width
+        self.paste_image_height = paste_image_height
         self.current_w = 0
         self.current_h = 0
-        self.font = ImageFont.truetype(str(FONT_PATH / font), int(font_size))
+        self.font = ImageFont.truetype(str(FONT_PATH / font), font_size)
         if not plain_text and not color:
             color = (255, 255, 255)
         self.background = background
@@ -187,39 +184,38 @@ class BuildImage:
                 if not color:
                     color = (255, 255, 255, 0)
                 ttf_w, ttf_h = self.getsize(plain_text)
-                self.w = self.w if self.w > ttf_w else ttf_w
-                self.h = self.h if self.h > ttf_h else ttf_h
+                self.w = max(self.w, ttf_w)
+                self.h = max(self.h, ttf_h)
             self.markImg = Image.new(image_mode, (self.w, self.h), color)
             self.markImg.convert(image_mode)
+        elif w or h:
+            self.markImg = Image.open(background).resize(
+                (self.w, self.h), Image.ANTIALIAS
+            )
         else:
-            if not w and not h:
-                self.markImg = Image.open(background)
-                w, h = self.markImg.size
-                if ratio and ratio > 0 and ratio != 1:
-                    self.w = int(ratio * w)
-                    self.h = int(ratio * h)
-                    self.markImg = self.markImg.resize(
-                        (self.w, self.h), Image.ANTIALIAS
-                    )
-                else:
-                    self.w = w
-                    self.h = h
-            else:
-                self.markImg = Image.open(background).resize(
+            self.markImg = Image.open(background)
+            w, h = self.markImg.size
+            if ratio and ratio > 0 and ratio != 1:
+                self.w = int(ratio * w)
+                self.h = int(ratio * h)
+                self.markImg = self.markImg.resize(
                     (self.w, self.h), Image.ANTIALIAS
                 )
+            else:
+                self.w = w
+                self.h = h
         if is_alpha:
             array = self.markImg.load()
             for i in range(w):
                 for j in range(h):
                     pos = array[i, j]
-                    is_edit = sum([1 for x in pos[0:3] if x > 240]) == 3
+                    is_edit = sum(x > 240 for x in pos[:3]) == 3
                     if is_edit:
                         array[i, j] = (255, 255, 255, 0)
         self.draw = ImageDraw.Draw(self.markImg)
         self.size = self.w, self.h
         if plain_text:
-            fill = font_color if font_color else (0, 0, 0)
+            fill = font_color or (0, 0, 0)
             self.text((0, 0), plain_text, fill)
         try:
             self.loop = asyncio.get_event_loop()
@@ -464,9 +460,9 @@ class BuildImage:
             :param w: 压缩图片宽度至 w
             :param h: 压缩图片高度至 h
         """
-        if not w and not h and not ratio:
-            raise Exception("缺少参数...")
-        if not w and not h and ratio:
+        if not w and not h:
+            if not ratio:
+                raise Exception("缺少参数...")
             w = int(self.w * ratio)
             h = int(self.h * ratio)
         self.markImg = self.markImg.resize((w, h), Image.ANTIALIAS)
@@ -538,8 +534,7 @@ class BuildImage:
         """
         buf = BytesIO()
         self.markImg.save(buf, format="PNG")
-        base64_str = base64.b64encode(buf.getvalue()).decode()
-        return base64_str
+        return base64.b64encode(buf.getvalue()).decode()
 
     def convert(self, type_: str):
         """
@@ -771,21 +766,18 @@ class BuildImage:
             :param aud: 利率
         """
         _x = None
-        if filter_ == "GaussianBlur":  # 高斯模糊
-            _x = ImageFilter.GaussianBlur
-        elif filter_ == "EDGE_ENHANCE":  # 锐化效果
-            _x = ImageFilter.EDGE_ENHANCE
-        elif filter_ == "BLUR":  # 模糊效果
+        if filter_ == "BLUR":
             _x = ImageFilter.BLUR
-        elif filter_ == "CONTOUR":  # 铅笔滤镜
+        elif filter_ == "CONTOUR":
             _x = ImageFilter.CONTOUR
-        elif filter_ == "FIND_EDGES":  # 边缘检测
+        elif filter_ == "EDGE_ENHANCE":
+            _x = ImageFilter.EDGE_ENHANCE
+        elif filter_ == "FIND_EDGES":
             _x = ImageFilter.FIND_EDGES
+        elif filter_ == "GaussianBlur":
+            _x = ImageFilter.GaussianBlur
         if _x:
-            if aud:
-                self.markImg = self.markImg.filter(_x(aud))
-            else:
-                self.markImg = self.markImg.filter(_x)
+            self.markImg = self.markImg.filter(_x(aud)) if aud else self.markImg.filter(_x)
         self.draw = ImageDraw.Draw(self.markImg)
 
     async def areplace_color_tran(
@@ -829,16 +821,16 @@ class BuildImage:
         for i in range(self.w):
             for j in range(self.h):
                 r, g, b = self.markImg.getpixel((i, j))
-                if not end_:
-                    if r == start_[0] and g == start_[1] and b == start_[2]:
-                        self.markImg.putpixel((i, j), replace_color)
-                else:
+                if end_:
                     if (
                         start_[0] <= r <= end_[0]
                         and start_[1] <= g <= end_[1]
                         and start_[2] <= b <= end_[2]
                     ):
                         self.markImg.putpixel((i, j), replace_color)
+
+                elif r == start_[0] and g == start_[1] and b == start_[2]:
+                    self.markImg.putpixel((i, j), replace_color)
 
     #
     def getchannel(self, type_):
@@ -909,17 +901,14 @@ class BuildMat:
         self.is_grid = is_grid
         self.background = background
         self.background_filler_type = background_filler_type
-        self.bar_color = bar_color if bar_color else [(0, 0, 0)]
+        self.bar_color = bar_color or [(0, 0, 0)]
         self.size = size
         self.padding_w = 120
         self.padding_h = 120
         self.line_length = 760
         self._deviation = 0.905
         self._color = {}
-        if not font_size:
-            self.font_size = int(25 * (1 - len(x_index) / 100))
-        else:
-            self.font_size = font_size
+        self.font_size = font_size or int(25 * (1 - len(x_index) / 100))
         if self.bar_color == ["*"]:
             self.bar_color = [
                 "#FF0000",
@@ -936,15 +925,13 @@ class BuildMat:
         self._bar_width = int(30 * (1 - (len(x_index) + 10) / 100))
         # 没有 y_index 时自动生成
         if not y_index:
-            _y_index = []
             _max_value = int(max(y))
             _max_value = ceil(
                 _max_value / eval("1" + "0" * (len(str(_max_value)) - 1))
             ) * eval("1" + "0" * (len(str(_max_value)) - 1))
             _max_value = _max_value if _max_value >= 10 else 100
-            _step = int(_max_value / 10)
-            for i in range(_step, _max_value + _step, _step):
-                _y_index.append(i)
+            _step = _max_value // 10
+            _y_index = list(range(_step, _max_value + _step, _step))
             self.y_index = _y_index
         self._p = self.line_length / max(self.y_index)
         self._y_interval = int((self.line_length - 70) / len(self.y_index))
@@ -1012,7 +999,7 @@ class BuildMat:
             :param type_: 填充类型
         """
         self.background = background
-        self.background_filler_type = type_ if type_ else self.background_filler_type
+        self.background_filler_type = type_ or self.background_filler_type
 
     def show(self):
         """
@@ -1261,9 +1248,7 @@ class BuildMat:
         )
         _interval = self._x_interval
         if self.mat_type == "barh":
-            tmp = x_index
-            x_index = y_index
-            y_index = tmp
+            x_index, y_index = y_index, x_index
             _interval = self._y_interval
         current_w = padding_w + _interval
         _text_font = BuildImage(0, 0, font_size=self.font_size, font=self.font)

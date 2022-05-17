@@ -39,11 +39,7 @@ class WordBank(db.Model):
         :param answer: 回答
         :param format_: 格式化数据
         """
-        _str = None
-        if format_:
-            _str = ""
-            for x, y in format_:
-                _str += f"{x}<_s>{y}<format>"
+        _str = "".join(f"{x}<_s>{y}<format>" for x, y in format_) if format_ else None
         return await cls._problem_answer_handle(
             user_id, group_id, problem, "add", search_type=search_type, answer=answer, format_=_str
         )
@@ -80,11 +76,7 @@ class WordBank(db.Model):
         :param problem: 问题
         :param index: 回答下标
         """
-        _str = None
-        if format_:
-            _str = ""
-            for x, y in format_:
-                _str += f"{x}<_s>{y}<format>"
+        _str = "".join(f"{x}<_s>{y}<format>" for x, y in format_) if format_ else None
         return await cls._problem_answer_handle(
             user_id, group_id, problem, "update", answer=answer, index=index, format_=_str
         )
@@ -126,9 +118,8 @@ class WordBank(db.Model):
         _tmp = []
         for problem in q:
             if "[_to_me" in problem:
-                r = re.search(r"\[_to_me\|(.*?)](.*)", problem)
-                if r:
-                    bot_name = r.group(1)
+                if r := re.search(r"\[_to_me\|(.*?)](.*)", problem):
+                    bot_name = r[1]
                     problem = problem.replace(f"[_to_me|{bot_name}]", bot_name)
             _tmp.append(problem)
         return list(set(_tmp))
@@ -149,7 +140,7 @@ class WordBank(db.Model):
             if q:
                 for x in q:
                     r = re.search(r"\[_to_me\|(.*?)](.*)", x.problem)
-                    if r and r.group(2) == problem:
+                    if r and r[2] == problem:
                         return x
             return None
         else:
@@ -238,8 +229,7 @@ class WordBank(db.Model):
                     q = [q[index]]
                 answer = "\n".join([x.answer for x in q])
                 for x in q:
-                    format_ = x.format
-                    if format_:
+                    if format_ := x.format:
                         for sp in format_.split("<format>")[:-1]:
                             _, image_name = sp.split("<_s>")
                             if image_name.endswith("jpg"):
@@ -253,19 +243,19 @@ class WordBank(db.Model):
                         & (cls.group_id == group_id)
                     ).gino.status()
                 return answer
+        elif type_ == "get":
+            q = await q.gino.all()
+            if q:
+                return [(x.answer, x.format.split("<format>")[:-1]) for x in q]
         elif type_ == "update":
             new_format = format_
             new_answer = answer
             q = await q.with_for_update().gino.all()
             if q:
                 path = DATA_PATH / "word_bank" / f"{group_id}"
-                if index is not None:
-                    q = [q[index]]
-                else:
-                    q = [q[0]]
+                q = [q[index]] if index is not None else [q[0]]
                 for x in q:
-                    format_ = x.format
-                    if format_:
+                    if format_ := x.format:
                         for sp in format_.split("<format>")[:-1]:
                             _, image_name = sp.split("<_s>")
                             if image_name.endswith("jpg"):
@@ -282,8 +272,4 @@ class WordBank(db.Model):
                         & (cls.update_time == x.update_time)
                     ).gino.status()
                 return True
-        elif type_ == "get":
-            q = await q.gino.all()
-            if q:
-                return [(x.answer, x.format.split("<format>")[:-1]) for x in q]
         return False

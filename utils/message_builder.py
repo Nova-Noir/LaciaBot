@@ -29,7 +29,7 @@ def image(
     elif isinstance(file, bytes):
         return MessageSegment.image(file)
     elif b64:
-        return MessageSegment.image(b64 if "base64://" in b64 else "base64://" + b64)
+        return MessageSegment.image(b64 if "base64://" in b64 else f"base64://{b64}")
     else:
         if file.startswith("http"):
             return MessageSegment.image(file)
@@ -37,9 +37,8 @@ def image(
             file += ".jpg"
         if (file := IMAGE_PATH / path / file if path else IMAGE_PATH / file).exists():
             return MessageSegment.image(file)
-        else:
-            logger.warning(f"图片 {file} 缺失...")
-            return ""
+        logger.warning(f"图片 {file} 缺失...")
+        return ""
 
 
 def at(qq: int) -> MessageSegment:
@@ -70,11 +69,9 @@ def record(voice_name: str, path: str = None) -> MessageSegment or str:
     if "http" in voice_name:
         return MessageSegment.record(voice_name)
     if file.exists():
-        result = MessageSegment.record(f"file:///{file.absolute()}")
-        return result
-    else:
-        logger.warning(f"语音{file.absolute()}缺失...")
-        return ""
+        return MessageSegment.record(f"file:///{file.absolute()}")
+    logger.warning(f"语音{file.absolute()}缺失...")
+    return ""
 
 
 def text(msg: str) -> MessageSegment:
@@ -187,10 +184,7 @@ class MessageBuilder:
 
     def __init__(self, msg: Union[str, MessageSegment, Message]):
         if msg:
-            if isinstance(msg, str):
-                self._msg = text(msg)
-            else:
-                self._msg = msg
+            self._msg = text(msg) if isinstance(msg, str) else msg
         else:
             self._msg = text("")
 

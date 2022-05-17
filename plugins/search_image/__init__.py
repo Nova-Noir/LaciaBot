@@ -55,11 +55,7 @@ def parse_image(key: str):
 
 @search_image.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State, arg: Message = CommandArg()):
-    msg = arg.extract_plain_text().strip()
-    if msg:
-        state["mod"] = msg
-    else:
-        state["mod"] = "saucenao"
+    state["mod"] = msg if (msg := arg.extract_plain_text().strip()) else "saucenao"
     if get_message_img(event.json()):
         state["img"] = event.message
 

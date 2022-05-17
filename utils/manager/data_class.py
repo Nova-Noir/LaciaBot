@@ -51,7 +51,7 @@ class StaticData:
         return copy.deepcopy(self._data)
 
     def save(self, path: Union[str, Path] = None):
-        path = path if path else self.file
+        path = path or self.file
         if isinstance(path, str):
             path = Path(path)
         if path:

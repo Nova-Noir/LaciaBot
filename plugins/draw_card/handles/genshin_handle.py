@@ -113,7 +113,7 @@ class GenshinHandle(BaseHandle[GenshinData]):
         count_manager.check_timeout(user_id)  # 检查上次抽卡次数是否超时
         count_manager.check_count(user_id, count)  # 检查次数累计
         pool = self.UP_CHAR if pool_name == "char" else self.UP_ARMS
-        for i in range(count):
+        for _ in range(count):
             count_manager.increase(user_id)
             star = count_manager.check(user_id)  # 是否有四星或五星保底
             if (
@@ -122,12 +122,14 @@ class GenshinHandle(BaseHandle[GenshinData]):
             ) % count_manager.get_max_guarantee() >= 72:
                 add += draw_config.genshin.I72_ADD
             if star:
-                if star == 4:
-                    card = self.get_card(pool_name, 2, add=add)
-                else:
-                    card = self.get_card(
+                card = (
+                    self.get_card(pool_name, 2, add=add)
+                    if star == 4
+                    else self.get_card(
                         pool_name, 3, add, count_manager.is_up(user_id)
                     )
+                )
+
             else:
                 card = self.get_card(pool_name, 1, add, count_manager.is_up(user_id))
             # print(f"{count_manager.get_user_count(user_id)}：",
@@ -292,7 +294,7 @@ class GenshinHandle(BaseHandle[GenshinData]):
                 }
                 char_info[member_dict["名称"]] = member_dict
             # 更新额外信息
-            for key in char_info.keys():
+            for key in char_info:
                 result = await self.get_url(f"https://wiki.biligame.com/ys/{key}")
                 if not result:
                     char_info[key]["常驻/限定"] = "未知"
@@ -354,8 +356,9 @@ class GenshinHandle(BaseHandle[GenshinData]):
             idx += 1
         # 下载头像框
         await self.download_img(
-            YS_URL + "/2/2e/opbcst4xbtcq0i4lwerucmosawn29ti.png", f"avatar_frame"
+            f"{YS_URL}/2/2e/opbcst4xbtcq0i4lwerucmosawn29ti.png", "avatar_frame"
         )
+
         await self.update_up_char()
 
     async def update_up_char(self):

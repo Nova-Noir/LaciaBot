@@ -36,8 +36,7 @@ url = "https://api.obfs.dev/api/pixiv/"
 
 @pid_search.handle()
 async def _h(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
-    pid = arg.extract_plain_text().strip()
-    if pid:
+    if pid := arg.extract_plain_text().strip():
         state["pid"] = pid
 
 
@@ -50,7 +49,7 @@ headers = {
 
 @pid_search.got("pid", prompt="需要查询的图片PID是？")
 async def _g(event: MessageEvent, state: T_State, pid: str = Arg("pid")):
-    if pid in ["取消", "算了"]:
+    if pid in {"取消", "算了"}:
         await pid_search.finish("已取消操作...")
     # if is_number(pid):
     #     await pid_search.reject_arg("pid", "笨蛋，重新输入数！字！")

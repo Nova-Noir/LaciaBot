@@ -80,8 +80,7 @@ class RequestManager(StaticData):
         通过id获取群号
         :param id_: id
         """
-        data = self._data["group"].get(str(id_))
-        if data:
+        if data := self._data["group"].get(str(id_)):
             return data["invite_group"]
         return None
 

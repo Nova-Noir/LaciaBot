@@ -130,7 +130,7 @@ def _get_system_disk(
         获取资源文件大小等
     """
     if not type_:
-        disk = SystemFolderSize(
+        return SystemFolderSize(
             font_dir_size=_get_dir_size(FONT_PATH) / 1024 / 1024,
             image_dir_size=_get_dir_size(IMAGE_PATH) / 1024 / 1024,
             text_dir_size=_get_dir_size(TEXT_PATH) / 1024 / 1024,
@@ -140,33 +140,32 @@ def _get_system_disk(
             log_dir_size=_get_dir_size(LOG_PATH) / 1024 / 1024,
             check_time=datetime.now().replace(microsecond=0),
         )
-        return disk
+
+    if type_ == "data":
+        dir_path = DATA_PATH
+    elif type_ == "font":
+        dir_path = FONT_PATH
+    elif type_ == "image":
+        dir_path = IMAGE_PATH
+    elif type_ == "record":
+        dir_path = RECORD_PATH
+    elif type_ == "temp":
+        dir_path = TEMP_PATH
+    elif type_ == "text":
+        dir_path = TEXT_PATH
     else:
-        if type_ == "image":
-            dir_path = IMAGE_PATH
-        elif type_ == "font":
-            dir_path = FONT_PATH
-        elif type_ == "text":
-            dir_path = TEXT_PATH
-        elif type_ == "record":
-            dir_path = RECORD_PATH
-        elif type_ == "data":
-            dir_path = DATA_PATH
-        elif type_ == "temp":
-            dir_path = TEMP_PATH
+        dir_path = LOG_PATH
+    dir_map = {}
+    other_file_size = 0
+    for file in os.listdir(dir_path):
+        file = Path(dir_path / file)
+        if file.is_dir():
+            dir_map[file.name] = _get_dir_size(file) / 1024 / 1024
         else:
-            dir_path = LOG_PATH
-        dir_map = {}
-        other_file_size = 0
-        for file in os.listdir(dir_path):
-            file = Path(dir_path / file)
-            if file.is_dir():
-                dir_map[file.name] = _get_dir_size(file) / 1024 / 1024
-            else:
-                other_file_size += os.path.getsize(file) / 1024 / 1024
-        dir_map["其他文件"] = other_file_size
-        dir_map["check_time"] = datetime.now().replace(microsecond=0)
-        return dir_map
+            other_file_size += os.path.getsize(file) / 1024 / 1024
+    dir_map["其他文件"] = other_file_size
+    dir_map["check_time"] = datetime.now().replace(microsecond=0)
+    return dir_map
 
 
 def _get_dir_size(dir_path: Path) -> float:
@@ -176,10 +175,10 @@ def _get_dir_size(dir_path: Path) -> float:
     参数：
         :param dir_path: 文件夹路径
     """
-    size = 0
-    for root, dirs, files in os.walk(dir_path):
-        size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
-    return size
+    return sum(
+        sum(os.path.getsize(os.path.join(root, name)) for name in files)
+        for root, dirs, files in os.walk(dir_path)
+    )
 
 
 def save_system_data(cpu: float, memory: float, disk: float):

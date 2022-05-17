@@ -36,22 +36,24 @@ async def remind(bot: Bot):
         if not restart.exists():
             with open(restart, "w", encoding="utf8") as f:
                 f.write(
-                    f"pid=$(netstat -tunlp | grep "
-                    + str(bot.config.port)
-                    + " | awk '{print $7}')\n"
-                    "pid=${pid%/*}\n"
-                    "kill -9 $pid\n"
-                    "sleep 3\n"
-                    "python3 bot.py"
+                    (
+                        ("pid=$(netstat -tunlp | grep " + str(bot.config.port))
+                        + " | awk '{print $7}')\n"
+                        "pid=${pid%/*}\n"
+                        "kill -9 $pid\n"
+                        "sleep 3\n"
+                        "python3 bot.py"
+                    )
                 )
+
             os.system("chmod +x ./restart.sh")
             logger.info("已自动生成 restart.sh(重启) 文件，请检查脚本是否与本地指令符合...")
     is_restart_file = Path() / "is_restart"
     if is_restart_file.exists():
         await bot.send_private_msg(
-            user_id=int(list(bot.config.superusers)[0]),
-            message=f"真寻重启完毕...",
+            user_id=int(list(bot.config.superusers)[0]), message="真寻重启完毕..."
         )
+
         is_restart_file.unlink()
 
 
@@ -72,7 +74,7 @@ async def check_update(bot: Bot) -> 'int, str':
                 user_id=int(list(bot.config.superusers)[0]),
                 message=f"检测真寻已更新，当前版本：{_version}，最新版本：{latest_version}\n" f"开始更新.....",
             )
-            logger.info(f"开始下载真寻最新版文件....")
+            logger.info("开始下载真寻最新版文件....")
             tar_gz_url = (await AsyncHttpx.get(tar_gz_url)).headers.get('Location')
             if await AsyncHttpx.download_file(tar_gz_url, zhenxun_latest_tar_gz):
                 logger.info("下载真寻最新版文件完成....")
@@ -117,8 +119,10 @@ async def check_update(bot: Bot) -> 'int, str':
     else:
         logger.warning("自动获取真寻版本失败....")
         await bot.send_private_msg(
-            user_id=int(list(bot.config.superusers)[0]), message=f"自动获取真寻版本失败...."
+            user_id=int(list(bot.config.superusers)[0]),
+            message="自动获取真寻版本失败....",
         )
+
     return 999, ''
 
 
@@ -128,7 +132,6 @@ def _file_handle(latest_version: str) -> str:
     if backup_dir.exists():
         shutil.rmtree(backup_dir)
     tf = None
-    error = ''
     # try:
     backup_dir.mkdir(exist_ok=True, parents=True)
     logger.info("开始解压真寻文件压缩包....")
@@ -144,13 +147,11 @@ def _file_handle(latest_version: str) -> str:
     config_file = Path() / "configs" / "config.py"
     config_path_file = Path() / "configs" / "path_config.py"
     for file in [config_file.name]:
-        tmp = ""
         new_file = Path(zhenxun_latest_file) / "configs" / file
         old_file = Path() / "configs" / file
         new_lines = open(new_file, "r", encoding="utf8").readlines()
         old_lines = open(old_file, "r", encoding="utf8").readlines()
-        for nl in new_lines:
-            tmp += check_old_lines(old_lines, nl)
+        tmp = "".join(check_old_lines(old_lines, nl) for nl in new_lines)
         with open(old_file, "w", encoding="utf8") as f:
             f.write(tmp)
     for file in delete_file + update_file:
@@ -172,10 +173,14 @@ def _file_handle(latest_version: str) -> str:
     for file in add_file + update_file:
         new_file = Path(zhenxun_latest_file) / file
         old_file = Path() / file
-        if old_file not in [config_file, config_path_file] and file != "configs":
-            if not old_file.exists() and new_file.exists():
-                os.rename(new_file.absolute(), old_file.absolute())
-                logger.info(f"已更新文件：{file}")
+        if (
+            old_file not in [config_file, config_path_file]
+            and file != "configs"
+            and not old_file.exists()
+            and new_file.exists()
+        ):
+            os.rename(new_file.absolute(), old_file.absolute())
+            logger.info(f"已更新文件：{file}")
     # except Exception as e:
     #     error = f'{type(e)}：{e}'
     if tf:
@@ -189,7 +194,7 @@ def _file_handle(latest_version: str) -> str:
         local_update_info_file.unlink()
     with open(_version_file, "w", encoding="utf8") as f:
         f.write(f"__version__: {latest_version}")
-    return error
+    return ''
 
 
 # 获取最新版本号
@@ -210,7 +215,12 @@ async def get_latest_version_data() -> dict:
 def check_old_lines(lines: List[str], line: str) -> str:
     if "=" not in line:
         return line
-    for l in lines:
-        if "=" in l and l.split("=")[0].strip() == line.split("=")[0].strip():
-            return l
-    return line
+    return next(
+        (
+            l
+            for l in lines
+            if "=" in l
+            and l.split("=")[0].strip() == line.split("=")[0].strip()
+        ),
+        line,
+    )

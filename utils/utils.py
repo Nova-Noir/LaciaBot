@@ -133,7 +133,7 @@ class DailyNumberLimiter:
         if day != self.today:
             self.today = day
             self.count.clear()
-        return bool(self.count[key] < self.max)
+        return self.count[key] < self.max
 
     def get_num(self, key):
         return self.count[key]
@@ -184,8 +184,7 @@ def get_matchers() -> List[Type[Matcher]]:
     """
     _matchers = []
     for i in matchers.keys():
-        for matcher in matchers[i]:
-            _matchers.append(matcher)
+        _matchers.extend(iter(matchers[i]))
     return _matchers
 
 
@@ -199,9 +198,11 @@ def get_message_at(data: Union[str, Message]) -> List[int]:
     qq_list = []
     if isinstance(data, str):
         data = json.loads(data)
-        for msg in data["message"]:
-            if msg["type"] == "at":
-                qq_list.append(int(msg["data"]["qq"]))
+        qq_list.extend(
+            int(msg["data"]["qq"])
+            for msg in data["message"]
+            if msg["type"] == "at"
+        )
 
     return qq_list
 
@@ -216,12 +217,14 @@ def get_message_img(data: Union[str, Message]) -> List[str]:
     img_list = []
     if isinstance(data, str):
         data = json.loads(data)
-        for msg in data["message"]:
-            if msg["type"] == "image":
-                img_list.append(msg["data"]["url"])
+        img_list.extend(
+            msg["data"]["url"]
+            for msg in data["message"]
+            if msg["type"] == "image"
+        )
+
     else:
-        for seg in data["image"]:
-            img_list.append(seg.data["url"])
+        img_list.extend(seg.data["url"] for seg in data["image"])
     return img_list
 
 
@@ -235,12 +238,14 @@ def get_message_img_file(data: Union[str, Message]) -> List[str]:
     file_list = []
     if isinstance(data, str):
         data = json.loads(data)
-        for msg in data["message"]:
-            if msg["type"] == "image":
-                file_list.append(msg["data"]["file"])
+        file_list.extend(
+            msg["data"]["file"]
+            for msg in data["message"]
+            if msg["type"] == "image"
+        )
+
     else:
-        for seg in data["image"]:
-            file_list.append(seg.data["file"])
+        file_list.extend(seg.data["file"] for seg in data["image"])
     return file_list
 
 
@@ -274,12 +279,14 @@ def get_message_record(data: Union[str, Message]) -> List[str]:
     record_list = []
     if isinstance(data, str):
         data = json.loads(data)
-        for msg in data["message"]:
-            if msg["type"] == "record":
-                record_list.append(msg["data"]["url"])
+        record_list.extend(
+            msg["data"]["url"]
+            for msg in data["message"]
+            if msg["type"] == "record"
+        )
+
     else:
-        for seg in data["record"]:
-            record_list.append(seg.data["url"])
+        record_list.extend(seg.data["url"] for seg in data["record"])
     return record_list
 
 
@@ -291,12 +298,8 @@ def get_message_json(data: str) -> List[dict]:
         :param data: event.json()
     """
     try:
-        json_list = []
         data = json.loads(data)
-        for msg in data["message"]:
-            if msg["type"] == "json":
-                json_list.append(msg["data"])
-        return json_list
+        return [msg["data"] for msg in data["message"] if msg["type"] == "json"]
     except KeyError:
         return []
 
@@ -306,7 +309,7 @@ def get_local_proxy():
     说明：
         获取 config.py 中设置的代理
     """
-    return SYSTEM_PROXY if SYSTEM_PROXY else None
+    return SYSTEM_PROXY or None
 
 
 def is_chinese(word: str) -> bool:
@@ -316,10 +319,7 @@ def is_chinese(word: str) -> bool:
     参数：
         :param word: 文本
     """
-    for ch in word:
-        if not "\u4e00" <= ch <= "\u9fff":
-            return False
-    return True
+    return all("\u4e00" <= ch <= "\u9fff" for ch in word)
 
 
 async def get_user_avatar(qq: int) -> Optional[bytes]:
@@ -363,10 +363,9 @@ def cn2py(word: str) -> str:
     参数：
         :param word: 文本
     """
-    temp = ""
-    for i in pypinyin.pinyin(word, style=pypinyin.NORMAL):
-        temp += "".join(i)
-    return temp
+    return "".join(
+        "".join(i) for i in pypinyin.pinyin(word, style=pypinyin.NORMAL)
+    )
 
 
 def change_pixiv_image_links(
