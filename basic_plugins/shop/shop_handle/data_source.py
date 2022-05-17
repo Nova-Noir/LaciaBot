@@ -107,7 +107,7 @@ async def create_shop_help() -> str:
             ).split()
             y_m_d = limit_time[0]
             _h_m = limit_time[1].split(":")
-            h_m = _h_m[0] + "时 " + _h_m[1] + "分"
+            h_m = f"{_h_m[0]}时 {_h_m[1]}分"
             await bk.atext((605, 38), str(y_m_d))
             await bk.atext((615, 57), str(h_m))
             await bk.aline((550, -1, 710, -1), "#a29ad6", 5)
@@ -117,7 +117,7 @@ async def create_shop_help() -> str:
         current_h += 90
     w = 1000
     h = A.h + 230 + 100
-    h = 1000 if h < 1000 else h
+    h = max(h, 1000)
     shop_logo = BuildImage(100, 100, background=f"{IMAGE_PATH}/other/shop_text.png")
     shop = BuildImage(w, h, font_size=20, color="#f9f6f2")
     shop.paste(A, (20, 230))
@@ -160,9 +160,7 @@ async def register_goods(
             if limit_time is not None and limit_time != 0
             else 0
         )
-        return await GoodsInfo.add_goods(
-            name, int(price), des, float(discount), limit_time
-        )
+        return await GoodsInfo.add_goods(name, price, des, float(discount), limit_time)
     return False
 
 
@@ -197,55 +195,56 @@ async def update_goods(**kwargs) -> "str, str, int":
     :param kwargs: kwargs
     :return: 更新状况
     """
-    if kwargs:
-        goods_lst = await GoodsInfo.get_all_goods()
-        if is_number(kwargs["name"]):
-            if int(kwargs["name"]) < 1 or int(kwargs["name"]) > len(goods_lst):
-                return "序号错误，没有该序号的商品...", "", 999
-            goods = goods_lst[int(kwargs["name"]) - 1]
-        else:
-            goods = await GoodsInfo.get_goods_info(kwargs["name"])
-            if not goods:
-                return "名称错误，没有该名称的商品...", "", 999
-        name = goods.goods_name
-        price = goods.goods_price
-        des = goods.goods_description
-        discount = goods.goods_discount
-        limit_time = goods.goods_limit_time
-        new_time = 0
-        tmp = ""
-        if kwargs.get("price"):
-            tmp += f'价格：{price} --> {kwargs["price"]}\n'
-            price = kwargs["price"]
-        if kwargs.get("des"):
-            tmp += f'描述：{des} --> {kwargs["des"]}\n'
-            des = kwargs["des"]
-        if kwargs.get("discount"):
-            tmp += f'折扣：{discount} --> {kwargs["discount"]}\n'
-            discount = kwargs["discount"]
-        if kwargs.get("limit_time"):
-            kwargs["limit_time"] = float(kwargs["limit_time"])
-            new_time = time.strftime(
-                "%Y-%m-%d %H:%M:%S",
-                time.localtime(time.time() + kwargs["limit_time"] * 60 * 60),
-            )
-            tmp += f"限时至： {new_time}\n"
-            limit_time = kwargs["limit_time"]
-        return (
-            await GoodsInfo.update_goods(
-                name,
-                int(price),
-                des,
-                float(discount),
-                int(
-                    time.time() + limit_time * 60 * 60
-                    if limit_time != 0 and new_time
-                    else 0
-                ),
-            ),
-            name,
-            tmp[:-1],
+    if not kwargs:
+        return
+    goods_lst = await GoodsInfo.get_all_goods()
+    if is_number(kwargs["name"]):
+        if int(kwargs["name"]) < 1 or int(kwargs["name"]) > len(goods_lst):
+            return "序号错误，没有该序号的商品...", "", 999
+        goods = goods_lst[int(kwargs["name"]) - 1]
+    else:
+        goods = await GoodsInfo.get_goods_info(kwargs["name"])
+        if not goods:
+            return "名称错误，没有该名称的商品...", "", 999
+    name = goods.goods_name
+    price = goods.goods_price
+    des = goods.goods_description
+    discount = goods.goods_discount
+    limit_time = goods.goods_limit_time
+    new_time = 0
+    tmp = ""
+    if kwargs.get("price"):
+        tmp += f'价格：{price} --> {kwargs["price"]}\n'
+        price = kwargs["price"]
+    if kwargs.get("des"):
+        tmp += f'描述：{des} --> {kwargs["des"]}\n'
+        des = kwargs["des"]
+    if kwargs.get("discount"):
+        tmp += f'折扣：{discount} --> {kwargs["discount"]}\n'
+        discount = kwargs["discount"]
+    if kwargs.get("limit_time"):
+        kwargs["limit_time"] = float(kwargs["limit_time"])
+        new_time = time.strftime(
+            "%Y-%m-%d %H:%M:%S",
+            time.localtime(time.time() + kwargs["limit_time"] * 60 * 60),
         )
+        tmp += f"限时至： {new_time}\n"
+        limit_time = kwargs["limit_time"]
+    return (
+        await GoodsInfo.update_goods(
+            name,
+            int(price),
+            des,
+            float(discount),
+            int(
+                time.time() + limit_time * 60 * 60
+                if limit_time != 0 and new_time
+                else 0
+            ),
+        ),
+        name,
+        tmp[:-1],
+    )
 
 
 def parse_goods_info(msg: str) -> Union[dict, str]:

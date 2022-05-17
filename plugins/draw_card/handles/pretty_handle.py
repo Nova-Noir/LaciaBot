@@ -133,7 +133,7 @@ class PrettyHandle(BaseHandle[PrettyData]):
         return await asyncio.get_event_loop().run_in_executor(None, self._draw, count, pool_name)
 
     def _draw(self, count: int, pool_name: str, **kwargs) -> Message:
-        pool_name = "char" if not pool_name else pool_name
+        pool_name = pool_name or "char"
         index2card = self.get_cards(count, pool_name)
         cards = [card[0] for card in index2card]
         up_event = self.UP_CHAR if pool_name == "char" else self.UP_CARD
@@ -143,9 +143,9 @@ class PrettyHandle(BaseHandle[PrettyData]):
         return pool_info + image(b64=self.generate_img(cards).pic2bs4()) + result
 
     def generate_card_img(self, card: PrettyData) -> BuildImage:
+        img_w = 200
         if isinstance(card, PrettyChar):
             star_h = 30
-            img_w = 200
             img_h = 219
             font_h = 50
             bg = BuildImage(img_w, img_h + font_h, color="#EFF2F5")
@@ -158,7 +158,7 @@ class PrettyHandle(BaseHandle[PrettyData]):
                 bg.paste(star, (int((img_w - star_w) / 2) + star_h * i, 0), alpha=True)
             bg.paste(img, (0, 0), alpha=True)
             # 加名字
-            text = card.name[:5] + "..." if len(card.name) > 6 else card.name
+            text = f"{card.name[:5]}..." if len(card.name) > 6 else card.name
             font = load_font(fontsize=30)
             text_w, _ = font.getsize(text)
             draw = ImageDraw.Draw(bg.markImg)
@@ -168,10 +168,8 @@ class PrettyHandle(BaseHandle[PrettyData]):
                 font=font,
                 fill="gray",
             )
-            return bg
         else:
             sep_w = 10
-            img_w = 200
             img_h = 267
             font_h = 75
             bg = BuildImage(img_w + sep_w * 2, img_h + font_h, color="#EFF2F5")
@@ -206,7 +204,8 @@ class PrettyHandle(BaseHandle[PrettyData]):
                 align="center",
                 fill="gray",
             )
-            return bg
+
+        return bg
 
     def _init_data(self):
         self.ALL_CHAR = [
@@ -221,10 +220,11 @@ class PrettyHandle(BaseHandle[PrettyData]):
             PrettyCard(
                 name=value["中文名"],
                 star=["R", "SR", "SSR"].index(value["稀有度"]) + 1,
-                limited=True if "卡池" not in value["获取方式"] else False,
+                limited="卡池" not in value["获取方式"],
             )
             for value in self.load_data("pretty_card.json").values()
         ]
+
         self.load_up_char()
 
     def load_up_char(self):
@@ -304,8 +304,9 @@ class PrettyHandle(BaseHandle[PrettyData]):
         # 下载星星
         PRETTY_URL = "https://patchwiki.biligame.com/images/umamusume"
         await self.download_img(
-            PRETTY_URL + "/1/13/e1hwjz4vmhtvk8wlyb7c0x3ld1s2ata.png", "star"
+            f"{PRETTY_URL}/1/13/e1hwjz4vmhtvk8wlyb7c0x3ld1s2ata.png", "star"
         )
+
         # 下载稀有度标志
         idx = 1
         for url in [
@@ -392,24 +393,27 @@ class PrettyHandle(BaseHandle[PrettyData]):
                         up_cards.append(
                             UpChar(name=name, star=star, limited=False, zoom=70)
                         )
-            if start_time and end_time:
-                if start_time <= datetime.now() <= end_time:
-                    self.UP_CHAR = UpEvent(
-                        title=title,
-                        pool_img=char_img,
-                        start_time=start_time,
-                        end_time=end_time,
-                        up_char=up_chars,
-                    )
-                    self.UP_CARD = UpEvent(
-                        title=title,
-                        pool_img=card_img,
-                        start_time=start_time,
-                        end_time=end_time,
-                        up_char=up_cards,
-                    )
-                    self.dump_up_char()
-                    logger.info(f"成功获取{self.game_name_cn}当前up信息...当前up池: {title}")
+            if (
+                start_time
+                and end_time
+                and start_time <= datetime.now() <= end_time
+            ):
+                self.UP_CHAR = UpEvent(
+                    title=title,
+                    pool_img=char_img,
+                    start_time=start_time,
+                    end_time=end_time,
+                    up_char=up_chars,
+                )
+                self.UP_CARD = UpEvent(
+                    title=title,
+                    pool_img=card_img,
+                    start_time=start_time,
+                    end_time=end_time,
+                    up_char=up_cards,
+                )
+                self.dump_up_char()
+                logger.info(f"成功获取{self.game_name_cn}当前up信息...当前up池: {title}")
         except Exception as e:
             logger.warning(f"{self.game_name_cn}UP更新出错 {type(e)}：{e}")
 

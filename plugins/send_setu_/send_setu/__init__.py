@@ -112,15 +112,14 @@ async def do_something(
     state: T_State,
 ):
     global setu_data_list
-    if isinstance(event, MessageEvent):
-        if matcher.plugin_name == "send_setu":
-            # 添加数据至数据库
-            try:
-                await add_data_to_database(setu_data_list)
-                logger.info("色图数据自动存储数据库成功...")
-                setu_data_list = []
-            except UninitializedError:
-                pass
+    if isinstance(event, MessageEvent) and matcher.plugin_name == "send_setu":
+        # 添加数据至数据库
+        try:
+            await add_data_to_database(setu_data_list)
+            logger.info("色图数据自动存储数据库成功...")
+            setu_data_list = []
+        except UninitializedError:
+            pass
 
 
 setu = on_command(
@@ -139,19 +138,19 @@ async def _(
         impression = (
             await SignGroupUser.ensure(event.user_id, event.group_id)
         ).impression
-        luox = get_luoxiang(impression)
-        if luox:
+        if luox := get_luoxiang(impression):
             await setu.finish(luox)
     r18 = 0
     num = 1
     # 是否看r18
-    if cmd[0] == "色图r" and isinstance(event, PrivateMessageEvent):
-        r18 = 1
-        num = 10
-    elif cmd[0] == "色图r" and isinstance(event, GroupMessageEvent):
-        await setu.finish(
-            random.choice(["这种不好意思的东西怎么可能给这么多人看啦", "羞羞脸！给我滚出克私聊！", "变态变态变态变态大变态！"])
-        )
+    if cmd[0] == "色图r":
+        if isinstance(event, PrivateMessageEvent):
+            r18 = 1
+            num = 10
+        elif isinstance(event, GroupMessageEvent):
+            await setu.finish(
+                random.choice(["这种不好意思的东西怎么可能给这么多人看啦", "羞羞脸！给我滚出克私聊！", "变态变态变态变态大变态！"])
+            )
     # 有 数字 的话先尝试本地色图id
     if msg and is_number(msg):
         setu_list, code = await get_setu_list(int(msg), r18=r18)
@@ -195,8 +194,7 @@ async def _(event: MessageEvent, reg_group: Tuple[Any, ...] = RegexGroup()):
         impression = (
             await SignGroupUser.ensure(event.user_id, event.group_id)
         ).impression
-        luox = get_luoxiang(impression)
-        if luox:
+        if luox := get_luoxiang(impression):
             await setu.finish(luox, at_sender=True)
     num, tags = reg_group
     num = num or 1

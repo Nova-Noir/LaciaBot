@@ -95,9 +95,7 @@ class GoodsUseFuncManager:
         获取商品使用方法的kwargs
         :param goods_name: 商品名称
         """
-        if self.exists(goods_name):
-            return self._data[goods_name]["kwargs"]
-        return {}
+        return self._data[goods_name]["kwargs"] if self.exists(goods_name) else {}
 
     def init_model(self, goods_name: str, bot: Bot, event: GroupMessageEvent, num: int):
         return self._data[goods_name]["model"](

@@ -119,7 +119,7 @@ class AzurHandle(BaseHandle[AzurChar]):
         bg.paste(frame, (sep_w, sep_t), alpha=True)
         bg.circle_corner(6)
         # 加名字
-        text = card.name[:6] + "..." if len(card.name) > 7 else card.name
+        text = f"{card.name[:6]}..." if len(card.name) > 7 else card.name
         text_w, text_h = bg.getsize(text)
         bg.text(
             (sep_w + (w - text_w) / 2, h + sep_t + (sep_b - text_h) / 2),
@@ -181,7 +181,7 @@ class AzurHandle(BaseHandle[AzurChar]):
                 }
                 info[member_dict["名称"]] = member_dict
         # 更新额外信息
-        for key in info.keys():
+        for key in info:
             url = f"https://wiki.biligame.com/blhx/{key}"
             result = await self.get_url(url)
             if not result:
@@ -225,22 +225,22 @@ class AzurHandle(BaseHandle[AzurChar]):
 
     @staticmethod
     def parse_star(star: str) -> int:
-        if star in ["舰娘头像外框普通.png", "舰娘头像外框白色.png"]:
+        if star in {"舰娘头像外框普通.png", "舰娘头像外框白色.png"}:
             return 1
-        elif star in ["舰娘头像外框稀有.png", "舰娘头像外框蓝色.png"]:
+        elif star in {"舰娘头像外框稀有.png", "舰娘头像外框蓝色.png"}:
             return 2
-        elif star in ["舰娘头像外框精锐.png", "舰娘头像外框紫色.png"]:
+        elif star in {"舰娘头像外框精锐.png", "舰娘头像外框紫色.png"}:
             return 3
-        elif star in ["舰娘头像外框超稀有.png", "舰娘头像外框金色.png"]:
+        elif star in {"舰娘头像外框超稀有.png", "舰娘头像外框金色.png"}:
             return 4
-        elif star in ["舰娘头像外框海上传奇.png", "舰娘头像外框彩色.png"]:
+        elif star in {"舰娘头像外框海上传奇.png", "舰娘头像外框彩色.png"}:
             return 5
-        elif star in [
+        elif star in {
             "舰娘头像外框最高方案.png",
             "舰娘头像外框决战方案.png",
             "舰娘头像外框超稀有META.png",
             "舰娘头像外框精锐META.png",
-        ]:
+        }:
             return 6
         else:
             return 6

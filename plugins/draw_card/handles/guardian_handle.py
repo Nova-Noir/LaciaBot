@@ -186,7 +186,7 @@ class GuardianHandle(BaseHandle[GuardianData]):
             alpha=True,
         )
         # 加名字
-        text = card.name[:4] + "..." if len(card.name) > 5 else card.name
+        text = f"{card.name[:4]}..." if len(card.name) > 5 else card.name
         font = load_font(fontsize=14)
         text_w, _ = font.getsize(text)
         draw = ImageDraw.Draw(block.markImg)
@@ -329,8 +329,9 @@ class GuardianHandle(BaseHandle[GuardianData]):
             idx += 1
         # 头像框
         await self.download_img(
-            GT_URL + "/8/8e/ogbqslbhuykjhnc8trtoa0p0nhfzohs.png", f"avatar_frame"
+            f"{GT_URL}/8/8e/ogbqslbhuykjhnc8trtoa0p0nhfzohs.png", "avatar_frame"
         )
+
         await self.update_up_char()
 
     async def update_up_char(self):
@@ -352,8 +353,10 @@ class GuardianHandle(BaseHandle[GuardianData]):
             start, end = match.groups()
             start_time = dateparser.parse(start.replace("月", "/").replace("日", ""))
             end_time = dateparser.parse(end.replace("月", "/").replace("日", ""))
-            if not (start_time and end_time) or not (
-                start_time <= datetime.now() <= end_time
+            if (
+                not start_time
+                or not end_time
+                or not (start_time <= datetime.now() <= end_time)
             ):
                 return
             divs = announcement.xpath("./font/div")

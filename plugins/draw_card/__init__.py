@@ -235,10 +235,12 @@ create_matchers()
     minute=1,
 )
 async def _():
-    tasks = []
-    for game in games:
-        if game.flag:
-            tasks.append(asyncio.ensure_future(game.handle.update_info()))
+    tasks = [
+        asyncio.ensure_future(game.handle.update_info())
+        for game in games
+        if game.flag
+    ]
+
     await asyncio.gather(*tasks)
 
 

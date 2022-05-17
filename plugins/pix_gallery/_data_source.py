@@ -127,15 +127,12 @@ async def search_image(
                 author = x["user"]["name"]
                 tags = []
                 for tag in x["tags"]:
-                    for i in tag:
-                        if tag[i]:
-                            tags.append(tag[i])
+                    tags.extend(tag[i] for i in tag if tag[i])
                 img_urls = []
                 if x["page_count"] == 1:
                     img_urls.append(x["meta_single_page"]["original_image_url"])
                 else:
-                    for urls in x["meta_pages"]:
-                        img_urls.append(urls["image_urls"]["original"])
+                    img_urls.extend(urls["image_urls"]["original"] for urls in x["meta_pages"])
                 if (
                     (
                         bookmarks
@@ -163,7 +160,7 @@ async def search_image(
                     }
                 else:
                     continue
-            for x in img_data.keys():
+            for x in img_data:
                 data = img_data[x]
                 for img_url in data["img_urls"]:
                     img_p = img_url[img_url.rfind("_") + 1 : img_url.rfind(".")]
@@ -241,7 +238,6 @@ async def get_image(img_url: str, user_id: int) -> Optional[str]:
             return TEMP_PATH / f"pix_{user_id}_{img_url.split('/')[-1][:-4]}.jpg"
         except TimeoutError:
             logger.warning(f"PIX：{img_url} 图片下载超时...")
-            pass
     return None
 
 
@@ -281,9 +277,8 @@ async def remove_image(pid: int, img_p: str) -> bool:
     :param pid: pid
     :param img_p: 图片 p 如 p0，p1 等
     """
-    if img_p:
-        if "p" not in img_p:
-            img_p = f"p{img_p}"
+    if img_p and "p" not in img_p:
+        img_p = f"p{img_p}"
     return await Pixiv.remove_image_data(pid, img_p)
 
 
@@ -358,9 +353,7 @@ def gen_keyword_pic(
             for _ in range(img_data[x]["width"]):
                 tmp = BuildImage(198, 1100, font_size=20)
                 text_img = BuildImage(198, 100, font_size=50)
-                key_str = "\n".join(
-                    [key for key in img_data[x]["data"][start_index:end_index]]
-                )
+                key_str = "\n".join(list(img_data[x]["data"][start_index:end_index]))
                 tmp.text((10, 100), key_str)
                 if x.find("_n") == -1:
                     text_img.text((24, 24), "已收录")

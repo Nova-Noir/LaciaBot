@@ -62,7 +62,7 @@ async def _(bot: Bot):
     gl = await bot.get_group_list()
     msg = ["{group_id} {group_name}".format_map(g) for g in gl]
     msg = "\n".join(msg)
-    msg = f"bot:{bot.self_id}\n| 群号 | 群名 | 共{len(gl)}个群\n" + msg
+    msg = f"bot:{bot.self_id}\n| 群号 | 群名 | 共{len(gl)}个群\n{msg}"
     await cls_group.send(msg)
 
 
@@ -71,7 +71,7 @@ async def _(bot: Bot):
     gl = await bot.get_friend_list()
     msg = ["{user_id} {nickname}".format_map(g) for g in gl]
     msg = "\n".join(msg)
-    msg = f"| QQ号 | 昵称 | 共{len(gl)}个好友\n" + msg
+    msg = f"| QQ号 | 昵称 | 共{len(gl)}个好友\n{msg}"
     await cls_friend.send(msg)
 
 
@@ -104,8 +104,7 @@ async def _(bot: Bot, cmd: Tuple[str, ...] = Command(), arg: Message = CommandAr
     if is_number(id_):
         id_ = int(id_)
         if cmd[:2] == "同意":
-            rid = requests_manager.get_group_id(id_)
-            if rid:
+            if rid := requests_manager.get_group_id(id_):
                 if await GroupInfo.get_group_info(rid):
                     await GroupInfo.set_group_flag(rid, 1)
                 else:

@@ -67,7 +67,7 @@ class PcrHandle(BaseHandle[PcrChar]):
         for i in range(card.star):
             bg.paste(star, (sep_w + img_w - star_h * (i + 1), sep_h), alpha=True)
         # 加名字
-        text = card.name[:5] + "..." if len(card.name) > 6 else card.name
+        text = f"{card.name[:5]}..." if len(card.name) > 6 else card.name
         font = load_font(fontsize=14)
         text_w, text_h = font.getsize(text)
         draw = ImageDraw.Draw(bg.markImg)
@@ -81,11 +81,7 @@ class PcrHandle(BaseHandle[PcrChar]):
 
     def _init_data(self):
         self.ALL_CHAR = [
-            PcrChar(
-                name=value["名称"],
-                star=int(value["星级"]),
-                limited=True if "（" in key else False,
-            )
+            PcrChar(name=value["名称"], star=int(value["星级"]), limited="（" in key)
             for key, value in self.load_data().items()
         ]
 

@@ -25,10 +25,12 @@ class ShopRegister(dict):
                 raise ValueError("该商品已注册，请替换其他名称！")
             for n, p, d, s in zip(name, price, des, load_status):
                 if s:
-                    _temp_kwargs = {}
-                    for key, value in kwargs.items():
-                        if key.startswith(f"{n}_"):
-                            _temp_kwargs[key.split("_", maxsplit=1)[-1]] = value
+                    _temp_kwargs = {
+                        key.split("_", maxsplit=1)[-1]: value
+                        for key, value in kwargs.items()
+                        if key.startswith(f"{n}_")
+                    }
+
                     self._data[n] = {
                         "price": p,
                         "des": d,
@@ -73,16 +75,21 @@ class ShopRegister(dict):
         _price = (
             price
             if isinstance(price, tuple)
-            else tuple([price for _ in range(_current_len)])
+            else tuple(price for _ in range(_current_len))
         )
+
         _des = (
-            des if isinstance(des, tuple) else tuple([des for _ in range(_current_len)])
+            des
+            if isinstance(des, tuple)
+            else tuple(des for _ in range(_current_len))
         )
+
         _load_status = (
             load_status
             if isinstance(load_status, tuple)
-            else tuple([load_status for _ in range(_current_len)])
+            else tuple(load_status for _ in range(_current_len))
         )
+
         return self.register(_name, _price, _des, _load_status, **kwargs)
 
     def __setitem__(self, key, value):

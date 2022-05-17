@@ -131,7 +131,7 @@ def add_job(user_id: int, uid: int):
 
 
 async def _remind(user_id: int, uid: str):
-    uid = str(uid)
+    uid = uid
     if uid[0] in ["1", "2"]:
         server_id = "cn_gf01"
     elif uid[0] == "5":
@@ -165,8 +165,7 @@ async def _remind(user_id: int, uid: str):
         if not user_manager.exists(uid) and current_resin >= max_resin - 40:
             if current_resin == max_resin:
                 user_manager.append(uid)
-            bot = get_bot()
-            if bot:
+            if bot := get_bot():
                 if user_id in [x["user_id"] for x in await bot.get_friend_list()]:
                     await bot.send_private_msg(
                         user_id=user_id,

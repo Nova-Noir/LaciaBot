@@ -195,7 +195,7 @@ class ChatHistory(db.Model):
         if type_ == "user":
             query = query.where(cls.user_qq == uid)
             if msg_type == "private":
-                query = query.where(cls.group_id == None)
+                query = query.where(cls.group_id is None)
             elif msg_type == "group":
                 query = query.where(cls.group_id != None)
         else:

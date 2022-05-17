@@ -59,7 +59,7 @@ async def show_black_text_image(
         gid_str += f"{x.group_id}\n"
         plant_text = " ".join(x.plant_text.split("\n"))
         if A.getsize(plant_text)[0] > 200:
-            plant_text = plant_text[:20] + "..."
+            plant_text = f"{plant_text[:20]}..."
         plant_text_str += f"{plant_text}\n"
         black_word_str += f"{x.black_word}\n"
         punish_str += f"{x.punish}\n"

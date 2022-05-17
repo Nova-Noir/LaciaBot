@@ -47,7 +47,8 @@ class ConfigsManager:
         :param _override: 覆盖前值
         """
         if (
-            not (module in self._data.keys() and self._data[module].get(key))
+            module not in self._data.keys()
+            or not self._data[module].get(key)
             or _override
         ):
             _module = None
@@ -85,11 +86,14 @@ class ConfigsManager:
         :param key: 配置名称
         :param value: 值
         """
-        if module in self._data.keys():
-            if self._data[module].get(key) is not None and self._data[module][key] != value:
-                self._data[module][key]["value"] = value
-                self._simple_data[module][key] = value
-                self.save()
+        if (
+            module in self._data.keys()
+            and self._data[module].get(key) is not None
+            and self._data[module][key] != value
+        ):
+            self._data[module][key]["value"] = value
+            self._simple_data[module][key] = value
+            self.save()
 
     def set_help(self, module: str, key: str, help_: str):
         """
@@ -98,10 +102,9 @@ class ConfigsManager:
         :param key: 配置名称
         :param help_: 注释文本
         """
-        if module in self._data.keys():
-            if self._data[module].get(key) is not None:
-                self._data[module][key]["help"] = help_
-                self.save()
+        if module in self._data.keys() and self._data[module].get(key) is not None:
+            self._data[module][key]["help"] = help_
+            self.save()
 
     def set_default_value(self, module: str, key: str, value: str):
         """
@@ -110,10 +113,9 @@ class ConfigsManager:
         :param key: 配置名称
         :param value: 值
         """
-        if module in self._data.keys():
-            if self._data[module].get(key) is not None:
-                self._data[module][key]["default_value"] = value
-                self.save()
+        if module in self._data.keys() and self._data[module].get(key) is not None:
+            self._data[module][key]["default_value"] = value
+            self.save()
 
     def get_config(self, module: str, key: str, default: Optional[Any] = None) -> Optional[Any]:
         """
@@ -140,9 +142,11 @@ class ConfigsManager:
         :param key: 配置名称
         :return:
         """
-        if self._data.get(module) is not None:
-            if self._data[module].get(key) is not None:
-                return self._data[module][key].get("level_module")
+        if (
+            self._data.get(module) is not None
+            and self._data[module].get(key) is not None
+        ):
+            return self._data[module][key].get("level_module")
 
     def get(self, key: str):
         """
@@ -163,7 +167,7 @@ class ConfigsManager:
                 yaml.dump(
                     self._simple_data, f, indent=2, Dumper=yaml.RoundTripDumper, allow_unicode=True
                 )
-        path = path if path else self.file
+        path = path or self.file
         with open(path, "w", encoding="utf8") as f:
             yaml.dump(
                 self._data, f, indent=2, Dumper=yaml.RoundTripDumper, allow_unicode=True

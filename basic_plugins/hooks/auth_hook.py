@@ -131,21 +131,20 @@ async def _(matcher: Matcher, bot: Bot, event: Event, state: T_State):
                 if event.is_tome():
                     status_message_manager.add(event.group_id)
                 raise IgnoredException("权限不足")
-        else:
-            if not await LevelUser.check_level(
+        elif not await LevelUser.check_level(
                 event.user_id, 0, admin_manager.get_plugin_level(module)
             ):
-                try:
-                    await bot.send_private_msg(
-                        user_id=event.user_id,
-                        message=f"你的权限不足喔，该功能需要的权限等级：{admin_manager.get_plugin_level(module)}",
-                    )
-                except ActionFailed:
-                    pass
-                set_block_limit_false(event, module)
-                if event.is_tome():
-                    status_message_manager.add(event.user_id)
-                raise IgnoredException("权限不足")
+            try:
+                await bot.send_private_msg(
+                    user_id=event.user_id,
+                    message=f"你的权限不足喔，该功能需要的权限等级：{admin_manager.get_plugin_level(module)}",
+                )
+            except ActionFailed:
+                pass
+            set_block_limit_false(event, module)
+            if event.is_tome():
+                status_message_manager.add(event.user_id)
+            raise IgnoredException("权限不足")
     if module in plugins2info_dict.keys() and matcher.priority not in [1, 9]:
         # 戳一戳单独判断
         if isinstance(event, GroupMessageEvent) or isinstance(event, PokeNotifyEvent) or matcher.plugin_name in other_limit_plugins:
@@ -216,21 +215,19 @@ async def _(matcher: Matcher, bot: Bot, event: Event, state: T_State):
                     status_message_manager.add(event.group_id)
                 set_block_limit_false(event, module)
                 raise IgnoredException("该插件在群聊中已被禁用...")
-        else:
-            # 私聊禁用
-            if not plugins_manager.get_plugin_status(module, block_type="private"):
-                try:
-                    if _flmt_c.check(event.user_id):
-                        _flmt_c.start_cd(event.user_id)
-                        await bot.send_private_msg(
-                            user_id=event.user_id, message="该功能在私聊中已被禁用..."
-                        )
-                except ActionFailed:
-                    pass
-                if event.is_tome():
-                    status_message_manager.add(event.user_id)
-                set_block_limit_false(event, module)
-                raise IgnoredException("该插件在私聊中已被禁用...")
+        elif not plugins_manager.get_plugin_status(module, block_type="private"):
+            try:
+                if _flmt_c.check(event.user_id):
+                    _flmt_c.start_cd(event.user_id)
+                    await bot.send_private_msg(
+                        user_id=event.user_id, message="该功能在私聊中已被禁用..."
+                    )
+            except ActionFailed:
+                pass
+            if event.is_tome():
+                status_message_manager.add(event.user_id)
+            set_block_limit_false(event, module)
+            raise IgnoredException("该插件在私聊中已被禁用...")
         # 维护
         if not plugins_manager.get_plugin_status(module, block_type="all"):
             if isinstance(
