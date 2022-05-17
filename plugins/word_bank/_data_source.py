@@ -5,12 +5,10 @@ from typing import Union
 class WordBankBuilder:
 
     def __init__(self, user_id: int, group_id: int, problem: str):
-
         self._data = {
             "user_id": user_id,
-            "group_id": group_id,
-            "problem": problem
-        }
+            "group_id": group_id}
+        self.problem = problem
 
     def set_placeholder(self, id_: int, placeholder: Union[str, int]):
         """
@@ -29,24 +27,28 @@ class WordBankBuilder:
         """
         self._data["answer"] = answer
 
-    async def save(self):
+    def set_problem(self, problem: str):
+        """
+        设置问题
+        :param problem: 问题
+        """
+        self._data["problem"] = problem
+
+    async def save(self, search_type):
         user_id = self._data["user_id"]
         group_id = self._data["group_id"]
         problem = self._data["problem"]
         answer = self._data["answer"]
         placeholder = self._data.get("placeholder")
-        await WordBank.add_problem_answer(user_id, group_id, problem, answer, placeholder)
+        return await WordBank.add_problem_answer(user_id, group_id, search_type, problem, answer, placeholder)
+
+    async def update(self, index):
+        user_id = self._data["user_id"]
+        group_id = self._data["group_id"]
+        problem = self._data["problem"]
+        answer = self._data["answer"]
+        placeholder = self._data.get("placeholder")
+        return await WordBank.update_problem_answer(user_id, group_id, problem, answer, index, placeholder)
 
     def __str__(self):
         return str(self._data)
-
-
-
-
-
-
-
-
-
-
-

@@ -254,10 +254,9 @@ class Genshin(db.Model):
         query = cls.query.where(cls.today_query_uid.contains(str(uid)))
         x = await query.gino.first()
         if x:
+            await cls._add_query_uid(uid, uid)
             return x.cookie
-        for u in [
-            x for x in await cls.query.order_by(db.func.random()).gino.all() if x.cookie
-        ]:
+        for u in await cls.query.where(cls.cookie != "").order_by(db.func.random()).gino.all():
             if not u.today_query_uid or len(u.today_query_uid[:-1].split()) < 30:
                 await cls._add_query_uid(uid, u.uid)
                 return u.cookie
@@ -356,7 +355,7 @@ class Genshin(db.Model):
         """
         query = cls.query.where(cls.uid == cookie_uid).with_for_update()
         user = await query.gino.first()
-        await user.update(today_query_uid=cls.today_query_uid + f"{uid} ").apply()
+        await user.update(today_query_uid=user.today_query_uid + f"{uid} ").apply()
 
     @classmethod
     async def _get_user_data(

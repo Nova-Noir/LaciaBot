@@ -10,14 +10,24 @@ async def handle_api_call(bot: Bot, api: str, data: Dict[str, Any]):
     r = None
     if (
         (
-            (api == "send_msg" and data["message_type"] == "group")
+            (api == "send_msg" and data.get("message_type") == "group")
             or api == "send_group_msg"
         )
         and (
-            (r := re.search("^\[\[_task\|(.*)]]", str(data["message"]).strip()))
+            (
+                r := re.search(
+                    "^\[\[_task\|(.*)]]",
+                    data["message"].strip()
+                    if isinstance(data["message"], str)
+                    else str(data["message"]["text"]).strip(),
+                )
+            )
             or (
                 r := re.search(
-                    "^&#91;&#91;_task\|(.*)&#93;&#93;", str(data["message"]).strip()
+                    "^&#91;&#91;_task\|(.*)&#93;&#93;",
+                    data["message"].strip()
+                    if isinstance(data["message"], str)
+                    else str(data["message"]["text"]).strip(),
                 )
             )
         )

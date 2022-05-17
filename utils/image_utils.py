@@ -1,17 +1,18 @@
 import asyncio
-from configs.path_config import IMAGE_PATH, FONT_PATH
-from PIL import Image, ImageFile, ImageDraw, ImageFont, ImageFilter
-from imagehash import ImageHash
-from io import BytesIO
-from matplotlib import pyplot as plt
-from typing import Tuple, Optional, Union, List, Literal
-from pathlib import Path
-from math import ceil
-import random
-import cv2
 import base64
-import imagehash
+import random
 import re
+from io import BytesIO
+from math import ceil
+from pathlib import Path
+from typing import List, Literal, Optional, Tuple, Union
+
+import cv2
+import imagehash
+from configs.path_config import FONT_PATH, IMAGE_PATH
+from imagehash import ImageHash
+from matplotlib import pyplot as plt
+from PIL import Image, ImageDraw, ImageFile, ImageFilter, ImageFont
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
@@ -65,9 +66,7 @@ def compressed_image(
     """
     in_file = IMAGE_PATH / in_file if isinstance(in_file, str) else in_file
     if out_file:
-        out_file = (
-            IMAGE_PATH / out_file if isinstance(out_file, str) else out_file
-        )
+        out_file = IMAGE_PATH / out_file if isinstance(out_file, str) else out_file
     else:
         out_file = in_file
     h, w, d = cv2.imread(str(in_file.absolute())).shape
@@ -367,7 +366,7 @@ class BuildImage:
 
     async def atext(
         self,
-        pos: Tuple[int, int],
+        pos: Union[Tuple[int, int], Tuple[float, float]],
         text: str,
         fill: Union[str, Tuple[int, int, int]] = (0, 0, 0),
         center_type: Optional[Literal["center", "by_height", "by_width"]] = None,
@@ -385,7 +384,7 @@ class BuildImage:
 
     def text(
         self,
-        pos: Tuple[int, int],
+        pos: Union[Tuple[int, int], Tuple[float, float]],
         text: str,
         fill: Union[str, Tuple[int, int, int]] = (0, 0, 0),
         center_type: Optional[Literal["center", "by_height", "by_width"]] = None,
@@ -673,9 +672,11 @@ class BuildImage:
         ellipse_box = [0, 0, r2 - 2, r2 - 2]
         mask = Image.new(
             size=[int(dim * antialias) for dim in self.markImg.size],
-            mode='L', color='black')
+            mode="L",
+            color="black",
+        )
         draw = ImageDraw.Draw(mask)
-        for offset, fill in (width / -2.0, 'black'), (width / 2.0, 'white'):
+        for offset, fill in (width / -2.0, "black"), (width / 2.0, "white"):
             left, top = [(value + offset) * antialias for value in ellipse_box[:2]]
             right, bottom = [(value - offset) * antialias for value in ellipse_box[2:]]
             draw.ellipse([left, top, right, bottom], fill=fill)
@@ -1335,6 +1336,7 @@ async def text2image(
     font: str = "CJGaoDeGuo.otf",
     font_color: Union[str, Tuple[int, int, int]] = "black",
     padding: Union[int, Tuple[int, int, int, int]] = 0,
+    _add_height: float = 0,
 ) -> BuildImage:
     """
     说明：
@@ -1357,6 +1359,7 @@ async def text2image(
         :param font: 普通字体
         :param font_color: 普通字体颜色
         :param padding: 文本外边距，元组类型时为 （上，左，下，右）
+        :param _add_height: 由于get_size无法返回正确的高度，采用手动方式额外添加高度
     """
     pw = ph = top_padding = left_padding = 0
     if padding:
@@ -1488,16 +1491,17 @@ async def text2image(
     else:
         width = 0
         height = 0
-        _tmp = BuildImage(0, 0, font_size=font_size)
+        _tmp = BuildImage(0, 0, font=font, font_size=font_size)
         for x in text.split("\n"):
+            x = x if x.strip() else "正"
             w, h = _tmp.getsize(x)
-            height += h
+            height += h + _add_height
             width = width if width > w else w
         width += pw
         height += ph
         A = BuildImage(
             width + left_padding,
-            height + top_padding,
+            height + top_padding + 2,
             font_size=font_size,
             color=color,
             font=font,

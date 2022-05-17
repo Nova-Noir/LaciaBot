@@ -32,6 +32,12 @@
 ## 普通帮助图片
 ![x](https://github.com/HibiKier/zhenxun_bot/blob/0.0.8.2/docs_image/3238573864-836268675-E2FFBB2AC143EAF4DDDF150438508721.png)
 
+## Web UI
+[zhenxun_bot_webui](https://github.com/HibiKier/zhenxun_bot_webui)
+
+## 一键安装脚本
+[zhenxun_bot-deploy](https://github.com/AkashiCoin/zhenxun_bot-deploy)
+
 ## 提供符合真寻标准的插件仓库
 
 [AkashiCoin/nonebot_plugins_zhenxun_bot](https://github.com/AkashiCoin/nonebot_plugins_zhenxun_bot)
@@ -236,6 +242,127 @@ __Docker 最新版本由 [Sakuracio](https://github.com/Sakuracio) 提供__
 
 ## 更新
 
+### 2022/5/16
+
+* 词条支持图片和@问题 [@pull/160](https://github.com/HibiKier/zhenxun_bot/pull/160)
+
+### 2022/5/15
+
+* 修复了商店商品无法正确添加
+* 修复了多张色图无法正确发送
+
+### 2022/5/14
+
+* 修复B站动态生成失败的问题 [@pull/159](https://github.com/HibiKier/zhenxun_bot/pull/159)
+
+### 2022/5/11
+
+* fix: 更改p搜api，解决p搜无法使用的问题 [@pull/155](https://github.com/HibiKier/zhenxun_bot/pull/155)
+
+### 2022/5/9
+
+* 替换了疫情API
+* 修复了私聊.ban/.unban出错
+
+### 2022/5/5
+
+* 修改bilibili_sub插件在windows平台下报错 [@pull/153](https://github.com/HibiKier/zhenxun_bot/pull/153)
+
+### 2022/5/3 \[v0.1.5.2]
+
+* 商品使用函数可以添加特定参数，例如：user_id, group_id, ShopParam等以及自己提供的参数
+* 添加商品注册装饰器shop_register
+* 修复商品函数kwargs无法获取参数值
+
+
+### 2022/5/1
+
+* 删除了`group_last_chat`插件（该功能可由`chat_history`替代
+* 新增敏感词检测（全新反击系统，是时候重拳出击了
+
+### 2022/4/26
+
+* 修复了群白名单无法正确添加
+* 优化了管理员帮助图片，背景图层将位于最下层
+* 修复了树脂140时不断提醒（未测试
+* 新增了消息记录的消息排行
+* WebUI新增CPU，内存，磁盘监控
+* WebUI新增资源文件夹统计可视化
+
+### 2022/4/12
+
+* 修复b了命令私聊出错
+
+### 2022/4/10 \[v0.1.4.7]
+
+* 新增消息记录模块
+* 丰富处理请求操作提示
+* web ui新增配置项修改
+
+### 2022/4/9
+
+* fix: 更新问题，戳一戳图片路径问题 [@pull/144](https://github.com/HibiKier/zhenxun_bot/pull/144)
+
+### 2022/4/8
+
+* 修复原神玩家查询
+
+### 2022/4/6
+
+* update search_type [@pull/143](https://github.com/HibiKier/zhenxun_bot/pull/143)
+
+### 2022/4/5 \[v0.1.4.6]
+
+* 修复web修改插件后帮助图片生成错误
+
+### 2022/4/4 \[v0.1.4.5]
+
+* 替换了bt搜索URL
+* 优化使用playwright的相关代码
+* 原神玩家查询新增层岩巨渊探索
+* 修复原神便笺角色头像黑框
+* 修复同意群聊请求错误
+* 提供webui方面的api
+* 新增web-ui（前端简易管理页面插件）插件
+
+### 2022/3/21
+
+* 修复statistics_handle.py乱码
+
+### 2022/3/18 \[v0.1.4.4]
+
+* 修复戳一戳无法功能关闭与ban禁用
+* 新增图片搜索 search_image
+
+### 2022/3/7
+
+* 优化增删权限插件
+
+### 2022/3/6
+
+* 修复树脂提醒无法开启
+* 修复p搜图片路径错误
+
+### 2022/3/3 \[v0.1.4.3]
+
+* 修复手动同意群聊请求依旧退出
+
+### 2022/3/1 \[v0.1.4.2]
+
+* 0.1.4内容
+
+### 2022/2/27 \[v0.1.4.1]
+
+* 优化抽卡
+
+### 2022/2/25 \[v0.1.4]
+
+* PIX提供配置MAX_ONCE_NUM2FORWARD：当单次发送图片超过指定张数且在群聊时，将转为合并消息
+* 修复点歌无法正确发送
+* 修复我有一个朋友有时文本会包含CQ码
+* 修复群欢消息被动控制文本未删除 [@pull/124](https://github.com/HibiKier/zhenxun_bot/pull/124)
+* message_builder.image不再提供参数：abspath
+
 ### 2022/2/23
 
 * 插件状态将从已加载插件模块中读取
@@ -272,7 +399,6 @@ __Docker 最新版本由 [Sakuracio](https://github.com/Sakuracio) 提供__
 
 * 适配nonebot.beta2
 * 删除图片搜索 nonebot_plugin_picsearcher
-* 新增图片搜索 search_image
 * 替换cos api
 * 原神签到树脂提醒新增绑定群里，在某群绑定uid就会在某群发送提醒信息（有好友则私聊，需要重新绑定uid
 * 修改update_info.json
@@ -281,15 +407,15 @@ __Docker 最新版本由 [Sakuracio](https://github.com/Sakuracio) 提供__
 * epic restful 替换 [@pull/119](https://github.com/HibiKier/zhenxun_bot/pull/119)
 * fix: 修复远古时期残留的epic推送问题 [@pull/122](https://github.com/HibiKier/zhenxun_bot/pull/122)
 
-### 2021/2/11
+### 2022/2/11
 
 * 修复pix不使用反代无法下载图片
 
-### 2021/2/10 \[v0.1.1]
+### 2022/2/10 \[v0.1.1]
 
 * 修复购买道具出错
 
-### 2021/2/9 \[v0.1]
+### 2022/2/9 \[v0.1]
 
 * 新增原神自动签到和手动签到
 * 新增原神树脂提醒
@@ -299,7 +425,7 @@ __Docker 最新版本由 [Sakuracio](https://github.com/Sakuracio) 提供__
 * 修复修改商品时限制时间出错
 * 修复超时商品依旧可以被购买
 
-### 2021/1/16 \[v0.0.9.0]
+### 2022/1/16 \[v0.0.9.0]
 
 * Ai提供文本敏感词过滤器
 * 疫情插件适配新版腾讯API
@@ -318,7 +444,7 @@ __Docker 最新版本由 [Sakuracio](https://github.com/Sakuracio) 提供__
       * “send_success_msg”(发送成功的交互信息->即：使用道具 {name} {num} 次成功)
       * “_max_num_limit”(该道具单次使用的最多个数，默认1)
 
-### 2021/1/5 \[v0.0.8.2]
+### 2022/1/5 \[v0.0.8.2]
 
 * 提供金币消费hook，可在plugins2settings.yaml中配置该功能需要消费的金币
 * 商店插件将作为内置插件移动至basic_plugins

@@ -38,7 +38,7 @@ usage：
 __plugin_des__ = "非常便利的B站订阅通知"
 __plugin_cmd__ = ["添加订阅 [主播/UP/番剧] [id/链接/番名]", "删除订阅 [id]", "查看订阅"]
 __plugin_version__ = 0.1
-__plugin_author__ = "HibiKier"
+__plugin_author__ = "HibiKier & NumberSir"
 __plugin_settings__ = {
     "level": 5,
     "default_status": True,
@@ -211,7 +211,7 @@ async def _():
             await sub_manager.reload_sub_data()
             sub = await sub_manager.random_sub_data()
             if sub:
-                logger.info(f"Bilibili订阅开始检测：{sub.sub_id}")
+                logger.debug(f"Bilibili订阅开始检测：{sub.sub_id}")
                 rst = await get_sub_status(sub.sub_id, sub.sub_type)
                 await send_sub_msg(rst, sub, bot)
                 if sub.sub_type == "live":

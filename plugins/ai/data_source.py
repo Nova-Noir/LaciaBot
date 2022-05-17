@@ -57,7 +57,7 @@ async def get_chat_result(text: str, img_url: str, user_id: int, nickname: str) 
                 if random.random() < 0.2:
                     if nickname.find("大人") == -1:
                         nickname += "大~人~"
-        rst = rst.replace("小主人", nickname).replace("小朋友", nickname)
+        rst = str(rst).replace("小主人", nickname).replace("小朋友", nickname)
     ai_message_manager.add_result(user_id, rst)
     return rst
 
@@ -126,35 +126,39 @@ async def xie_ai(text: str) -> str:
     """
     res = await AsyncHttpx.get(f"http://api.qingyunke.com/api.php?key=free&appid=0&msg={text}")
     content = ""
-    data = json.loads(res.text)
-    if data["result"] == 0:
-        content = data["content"]
-        if "菲菲" in content:
-            content = content.replace("菲菲", NICKNAME)
-        if "艳儿" in content:
-            content = content.replace("艳儿", NICKNAME)
-        if "公众号" in content:
-            content = ""
-        if "{br}" in content:
-            content = content.replace("{br}", "\n")
-        if "提示" in content:
-            content = content[: content.find("提示")]
-        if "淘宝" in content or "taobao.com" in content:
-            return ""
-        while True:
-            r = re.search("{face:(.*)}", content)
-            if r:
-                id_ = r.group(1)
-                content = content.replace(
-                    "{" + f"face:{id_}" + "}", str(face(int(id_)))
-                )
-            else:
-                break
-    return (
-        content
-        if not content and not Config.get_config("ai", "ALAPI_AI_CHECK")
-        else await check_text(content)
-    )
+    try:
+        data = json.loads(res.text)
+        if data["result"] == 0:
+            content = data["content"]
+            if "菲菲" in content:
+                content = content.replace("菲菲", NICKNAME)
+            if "艳儿" in content:
+                content = content.replace("艳儿", NICKNAME)
+            if "公众号" in content:
+                content = ""
+            if "{br}" in content:
+                content = content.replace("{br}", "\n")
+            if "提示" in content:
+                content = content[: content.find("提示")]
+            if "淘宝" in content or "taobao.com" in content:
+                return ""
+            while True:
+                r = re.search("{face:(.*)}", content)
+                if r:
+                    id_ = r.group(1)
+                    content = content.replace(
+                        "{" + f"face:{id_}" + "}", str(face(int(id_)))
+                    )
+                else:
+                    break
+        return (
+            content
+            if not content and not Config.get_config("ai", "ALAPI_AI_CHECK")
+            else await check_text(content)
+        )
+    except Exception as e:
+        logger.error(f"Ai xie_ai 发生错误 {type(e)}：{e}")
+        return ""
 
 
 def hello() -> str:

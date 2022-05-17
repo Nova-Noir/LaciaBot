@@ -1,8 +1,9 @@
 import nonebot
+from pathlib import Path
 from nonebot.log import logger
-from pydantic import BaseModel, Extra, ValidationError
-from configs.path_config import IMAGE_PATH, DATA_PATH
-from configs.config import Config
+from pydantic import BaseModel, Extra
+from configs.config import Config as AConfig
+from configs.path_config import DATA_PATH
 
 try:
     import ujson as json
@@ -15,8 +16,8 @@ class GenshinConfig(BaseModel, extra=Extra.ignore):
     GENSHIN_FIVE_P: float = 0.006
     GENSHIN_FOUR_P: float = 0.051
     GENSHIN_THREE_P: float = 0.43
-    GENSHIN_G_FIVE_P: float = 0.13
-    GENSHIN_G_FOUR_P: float = 0.016
+    GENSHIN_G_FIVE_P: float = 0.016
+    GENSHIN_G_FOUR_P: float = 0.13
     I72_ADD: float = 0.0585
 
 
@@ -87,43 +88,20 @@ class OnmyojiConfig(BaseModel, extra=Extra.ignore):
     ONMYOJI_R: float = 0.7875
 
 
-class PathDict(BaseModel, extra=Extra.ignore):
-    genshin: str = "原神"
-    prts: str = "明日方舟"
-    pretty: str = "赛马娘"
-    guardian: str = "坎公骑冠剑"
-    pcr: str = "公主连结"
-    azur: str = "碧蓝航线"
-    fgo: str = "命运-冠位指定"
-    onmyoji: str = "阴阳师"
-
-
-class DrawConfig(BaseModel, extra=Extra.ignore):
+class Config(BaseModel, extra=Extra.ignore):
     # 开关
-    PRTS_FLAG: bool = Config.get_config("draw_card", "PRTS_FLAG")
-    GENSHIN_FLAG: bool = Config.get_config("draw_card", "GENSHIN_FLAG")
-    PRETTY_FLAG: bool = Config.get_config("draw_card", "PRETTY_FLAG")
-    GUARDIAN_FLAG: bool = Config.get_config("draw_card", "GUARDIAN_FLAG")
-    PCR_FLAG: bool = Config.get_config("draw_card", "PCR_FLAG")
-    AZUR_FLAG: bool = Config.get_config("draw_card", "AZUR_FLAG")
-    FGO_FLAG: bool = Config.get_config("draw_card", "FGO_FLAG")
-    ONMYOJI_FLAG: bool = Config.get_config("draw_card", "ONMYOJI_FLAG")
+    PRTS_FLAG: bool = AConfig.get_config("draw_card", "PRTS_FLAG")
+    GENSHIN_FLAG: bool = AConfig.get_config("draw_card", "GENSHIN_FLAG")
+    PRETTY_FLAG: bool = AConfig.get_config("draw_card", "PRETTY_FLAG")
+    GUARDIAN_FLAG: bool = AConfig.get_config("draw_card", "GUARDIAN_FLAG")
+    PCR_FLAG: bool = AConfig.get_config("draw_card", "PCR_FLAG")
+    AZUR_FLAG: bool = AConfig.get_config("draw_card", "AZUR_FLAG")
+    FGO_FLAG: bool = AConfig.get_config("draw_card", "FGO_FLAG")
+    ONMYOJI_FLAG: bool = AConfig.get_config("draw_card", "ONMYOJI_FLAG")
 
     # 其他配置
-    PCR_TAI: bool = Config.get_config("draw_card", "PCR_TAI")
-    SEMAPHORE: int = Config.get_config("draw_card", "SEMAPHORE")
-
-    # 路径
-    path_dict: dict = {
-        "genshin": "原神",
-        "prts": "明日方舟",
-        "pretty": "赛马娘",
-        "guardian": "坎公骑冠剑",
-        "pcr": "公主连结",
-        "azur": "碧蓝航线",
-        "fgo": "命运-冠位指定",
-        "onmyoji": "阴阳师",
-    }
+    PCR_TAI: bool = AConfig.get_config("draw_card", "PCR_TAI")
+    SEMAPHORE: int = AConfig.get_config("draw_card", "SEMAPHORE")
 
     # 抽卡概率
     prts: PrtsConfig = PrtsConfig()
@@ -137,27 +115,53 @@ class DrawConfig(BaseModel, extra=Extra.ignore):
 
 
 driver = nonebot.get_driver()
-global_config = driver.config
-DRAW_DATA_PATH = DATA_PATH / "draw_card"
-DRAW_IMAGE_PATH = IMAGE_PATH / "draw_card"
-# DRAW_PATH = Path(draw_path) if draw_path else Path("data/draw_card").absolute()
-config_path = DRAW_DATA_PATH / "draw_card_config" / "draw_card_config.json"
 
-draw_config: Config = DrawConfig()
+DRAW_PATH = DATA_PATH / "draw_card"
+config_path = DRAW_PATH / "draw_card_config" / "draw_card_config.json"
+
+draw_config: Config = Config()
+
+
+for game_flag, game_name in zip(
+    [
+        "PRTS_FLAG",
+        "GENSHIN_FLAG",
+        "PRETTY_FLAG",
+        "GUARDIAN_FLAG",
+        "PCR_FLAG",
+        "AZUR_FLAG",
+        "FGO_FLAG",
+        "ONMYOJI_FLAG",
+        "PCR_TAI",
+    ],
+    ["明日方舟", "原神", "赛马娘", "坎公骑冠剑", "公主连结", "碧蓝航线", "命运-冠位指定（FGO）", "阴阳师", "pcr台服卡池"],
+):
+    AConfig.add_plugin_config(
+        "draw_card",
+        game_flag,
+        True,
+        name="游戏抽卡",
+        help_=f"{game_name} 抽卡开关",
+        default_value=True,
+    )
+AConfig.add_plugin_config(
+    "draw_card", "SEMAPHORE", 5, help_=f"异步数据下载数量限制", default_value=5
+)
 
 
 @driver.on_startup
 def check_config():
     global draw_config
-
+    draw_config = Config()
     if not config_path.exists():
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        draw_config = DrawConfig()
+        draw_config = Config()
         logger.warning("draw_card：配置文件不存在，已重新生成配置文件.....")
 
-    json.dump(
-        draw_config.dict(),
-        config_path.open("w", encoding="utf8"),
-        indent=4,
-        ensure_ascii=False,
-    )
+    with config_path.open("w", encoding="utf8") as fp:
+        json.dump(
+            draw_config.dict(),
+            fp,
+            indent=4,
+            ensure_ascii=False,
+        )
