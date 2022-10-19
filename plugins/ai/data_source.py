@@ -174,11 +174,11 @@ def hello() -> str:
             "呼呼，叫俺干嘛",
         )
     )
-    img = random.choice(os.listdir(IMAGE_PATH / "zai"))
-    if img[-4:] == ".gif":
-        result += image(img, "zai")
-    else:
-        result += image(img, "zai")
+    # img = random.choice(os.listdir(IMAGE_PATH / "zai"))
+    # if img[-4:] == ".gif":
+    #     result += image(img, "zai")
+    # else:
+    #     result += image(img, "zai")
     return result
 
 
