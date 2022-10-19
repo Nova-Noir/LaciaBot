@@ -1,9 +1,9 @@
 from nonebot.matcher import Matcher
 from nonebot.message import run_preprocessor, IgnoredException
-from nonebot.adapters.onebot.v11.exception import ActionFailed
 from nonebot.typing import T_State
 from nonebot.adapters.onebot.v11 import (
     Bot,
+    ActionFailed,
     MessageEvent,
     GroupMessageEvent,
 )
@@ -25,7 +25,7 @@ _blmt = BanCheckLimiter(
 async def _(matcher: Matcher, bot: Bot, event: GroupMessageEvent, state: T_State):
     if not isinstance(event, MessageEvent):
         return
-    if matcher.type == "message" and matcher.priority not in [1, 9]:
+    if matcher.type == "message" and matcher.priority not in [1, 999]:
         if state["_prefix"]["raw_command"]:
             if _blmt.check(f'{event.user_id}{state["_prefix"]["raw_command"]}'):
                 if await BanUser.ban(

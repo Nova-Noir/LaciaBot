@@ -1,4 +1,4 @@
-from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, PrivateMessageEvent, Message
+from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, PrivateMessageEvent, Message, MessageEvent
 from nonebot import on_command
 from nonebot.typing import T_State
 from nonebot.rule import to_me
@@ -22,9 +22,15 @@ __plugin_des__ = "区区昵称，才不想叫呢！"
 __plugin_cmd__ = ["以后叫我 [昵称]", f"{NICKNAME}我是谁"]
 __plugin_version__ = 0.1
 __plugin_author__ = "HibiKier"
+__plugin_settings__ = {
+    "level": 5,
+    "default_status": True,
+    "limit_superuser": False,
+    "cmd": ["昵称", "昵称系统"],
+}
 __plugin_configs__ = {
     "BLACK_WORD": {
-        "value": ["爸", "爹", "爷"],
+        "value": ["爸", "爹", "爷", "父亲"],
         "help": "昵称所屏蔽的关键词，会被替换为 *",
         "default_value": None
     }
@@ -47,7 +53,7 @@ cancel_nickname = on_command("取消昵称", rule=to_me(), priority=5, block=Tru
 
 
 @nickname.handle()
-async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
+async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     msg = arg.extract_plain_text().strip()
     if not msg:
         await nickname.finish("叫你空白？叫你虚空？叫你无名？？", at_sender=True)
@@ -57,8 +63,9 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
         await nickname.finish("笨蛋！休想占用我的名字！#", at_sender=True)
     _tmp = ""
     black_word = Config.get_config("nickname", "BLACK_WORD")
-    for x in msg:
-        _tmp += "*" if x in black_word else x
+    if black_word:
+        for x in msg:
+            _tmp += "*" if x in black_word else x
     msg = _tmp
     if isinstance(event, GroupMessageEvent):
         if await GroupInfoUser.set_group_member_nickname(
@@ -73,7 +80,7 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
                         f"好啦好啦，我知道啦，{msg}，以后就这么叫你吧",
                         f"嗯嗯，{NICKNAME}记住你的昵称了哦，{msg}",
                         f"好突然，突然要叫你昵称什么的...{msg}..",
-                        f"{NICKNAME}会好好记住的{msg}的，放心吧",
+                        f"{NICKNAME}会好好记住{msg}的，放心吧",
                         f"好..好.，那窝以后就叫你{msg}了.",
                     ]
                 )
@@ -90,7 +97,7 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
                         f"好啦好啦，我知道啦，{msg}，以后就这么叫你吧",
                         f"嗯嗯，{NICKNAME}记住你的昵称了哦，{msg}",
                         f"好突然，突然要叫你昵称什么的...{msg}..",
-                        f"{NICKNAME}会好好记住的{msg}的，放心吧",
+                        f"{NICKNAME}会好好记住{msg}的，放心吧",
                         f"好..好.，那窝以后就叫你{msg}了.",
                     ]
                 )

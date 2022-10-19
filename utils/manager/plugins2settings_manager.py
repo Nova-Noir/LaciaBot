@@ -2,8 +2,10 @@ from typing import List, Optional, Union, Tuple
 from .data_class import StaticData
 from pathlib import Path
 from ruamel.yaml import YAML
+from ruamel import yaml
 
-yaml = YAML(typ="safe")
+
+_yaml = YAML(typ="safe")
 
 
 class Plugins2settingsManager(StaticData):
@@ -16,7 +18,7 @@ class Plugins2settingsManager(StaticData):
         super().__init__(None)
         if file.exists():
             with open(file, "r", encoding="utf8") as f:
-                self._data = yaml.load(f)
+                self._data = _yaml.load(f)
         if self._data:
             if "PluginSettings" in self._data.keys():
                 self._data = (
@@ -35,7 +37,6 @@ class Plugins2settingsManager(StaticData):
         limit_superuser: Optional[bool] = False,
         plugin_type: Tuple[Union[str, int]] = ("normal",),
         cost_gold: int = 0,
-        **kwargs
     ):
         """
         添加一个插件设置
@@ -47,26 +48,17 @@ class Plugins2settingsManager(StaticData):
         :param plugin_type: 插件类型
         :param cost_gold: 需要消费的金币
         """
-        if kwargs:
-            level = kwargs.get("level") if kwargs.get("level") is not None else 5
-            default_status = (
-                kwargs.get("default_status")
-                if kwargs.get("default_status") is not None
-                else True
-            )
-            limit_superuser = (
-                kwargs.get("limit_superuser")
-                if kwargs.get("limit_superuser") is not None
-                else False
-            )
-            cmd = kwargs.get("cmd") if kwargs.get("cmd") is not None else []
-            cost_gold = cost_gold if kwargs.get("cost_gold") else 0
+        level = level or 5
+        cmd = cmd or []
+        cost_gold = cost_gold or 0
         self._data[plugin] = {
             "level": level if level is not None else 5,
             "default_status": default_status if default_status is not None else True,
-            "limit_superuser": limit_superuser
-            if limit_superuser is not None
-            else False,
+            "limit_superuser": (
+                limit_superuser
+                if limit_superuser is not None
+                else False
+            ),
             "cmd": cmd,
             "plugin_type": list(
                 plugin_type if plugin_type is not None else ("normal",)
@@ -100,11 +92,19 @@ class Plugins2settingsManager(StaticData):
                     return key
         return keys
 
+    def save(self, path: Union[str, Path] = None):
+        path = path or self.file
+        if isinstance(path, str):
+            path = Path(path)
+        if path:
+            with open(path, "w", encoding="utf8") as f:
+                yaml.dump({"PluginSettings": self._data}, f, indent=2, Dumper=yaml.RoundTripDumper, allow_unicode=True)
+
     def reload(self):
         """
         重载本地数据
         """
         if self.file.exists():
             with open(self.file, "r", encoding="utf8") as f:
-                self._data: dict = yaml.load(f)
+                self._data: dict = _yaml.load(f)
                 self._data = self._data["PluginSettings"]

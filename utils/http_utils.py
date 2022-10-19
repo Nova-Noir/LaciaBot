@@ -6,7 +6,7 @@ from pathlib import Path
 from httpx import Response
 from asyncio.exceptions import TimeoutError
 from nonebot.adapters.onebot.v11 import MessageSegment
-from playwright.async_api import Page
+from playwright.async_api import Page, BrowserContext
 from .message_builder import image
 from httpx import ConnectTimeout
 from .browser import get_browser
@@ -14,6 +14,7 @@ from retrying import retry
 import asyncio
 import aiofiles
 import httpx
+import rich
 
 
 class AsyncHttpx:
@@ -29,15 +30,16 @@ class AsyncHttpx:
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
         cookies: Optional[Dict[str, str]] = None,
+        verify: bool = True,
         use_proxy: bool = True,
         proxy: Dict[str, str] = None,
         timeout: Optional[int] = 30,
         **kwargs,
     ) -> Response:
         """
-        说明：
+        说明:
             Get
-        参数：
+        参数:
             :param url: url
             :param params: params
             :param headers: 请求头
@@ -49,7 +51,7 @@ class AsyncHttpx:
         if not headers:
             headers = get_user_agent()
         proxy = proxy if proxy else cls.proxy if use_proxy else None
-        async with httpx.AsyncClient(proxies=proxy) as client:
+        async with httpx.AsyncClient(proxies=proxy, verify=verify) as client:
             return await client.get(
                 url,
                 params=params,
@@ -67,6 +69,7 @@ class AsyncHttpx:
         data: Optional[Dict[str, str]] = None,
         content: Any = None,
         files: Any = None,
+        verify: bool = True,
         use_proxy: bool = True,
         proxy: Dict[str, str] = None,
         json: Optional[Dict[str, Union[Any]]] = None,
@@ -77,9 +80,9 @@ class AsyncHttpx:
         **kwargs,
     ) -> Response:
         """
-        说明：
+        说明:
             Post
-        参数：
+        参数:
             :param url: url
             :param data: data
             :param content: content
@@ -95,7 +98,7 @@ class AsyncHttpx:
         if not headers:
             headers = get_user_agent()
         proxy = proxy if proxy else cls.proxy if use_proxy else None
-        async with httpx.AsyncClient(proxies=proxy) as client:
+        async with httpx.AsyncClient(proxies=proxy, verify=verify) as client:
             return await client.post(
                 url,
                 content=content,
@@ -116,50 +119,89 @@ class AsyncHttpx:
         path: Union[str, Path],
         *,
         params: Optional[Dict[str, str]] = None,
+        verify: bool = True,
         use_proxy: bool = True,
         proxy: Dict[str, str] = None,
         headers: Optional[Dict[str, str]] = None,
         cookies: Optional[Dict[str, str]] = None,
         timeout: Optional[int] = 30,
+        stream: bool = False,
         **kwargs,
     ) -> bool:
         """
-        说明：
+        说明:
             下载文件
-        参数：
+        参数:
             :param url: url
             :param path: 存储路径
             :param params: params
+            :param verify: verify
             :param use_proxy: 使用代理
             :param proxy: 指定代理
             :param headers: 请求头
             :param cookies: cookies
             :param timeout: 超时时间
+            :param stream: 是否使用流式下载（流式写入+进度条，适用于下载大文件）
         """
         if isinstance(path, str):
             path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
             for _ in range(3):
-                try:
-                    content = (
-                        await cls.get(
-                            url,
-                            params=params,
-                            headers=headers,
-                            cookies=cookies,
-                            use_proxy=use_proxy,
-                            proxy=proxy,
-                            timeout=timeout,
-                            **kwargs,
-                        )
-                    ).content
-                    async with aiofiles.open(path, "wb") as wf:
-                        await wf.write(content)
-                        logger.info(f"下载 {url} 成功.. Path：{path.absolute()}")
-                    return True
-                except (TimeoutError, ConnectTimeout):
-                    pass
+                if not stream:
+                    try:
+                        content = (
+                            await cls.get(
+                                url,
+                                params=params,
+                                headers=headers,
+                                cookies=cookies,
+                                use_proxy=use_proxy,
+                                proxy=proxy,
+                                timeout=timeout,
+                                **kwargs,
+                            )
+                        ).content
+                        async with aiofiles.open(path, "wb") as wf:
+                            await wf.write(content)
+                            logger.info(f"下载 {url} 成功.. Path：{path.absolute()}")
+                        return True
+                    except (TimeoutError, ConnectTimeout):
+                        pass
+                else:
+                    if not headers:
+                        headers = get_user_agent()
+                    proxy = proxy if proxy else cls.proxy if use_proxy else None
+                    try:
+                        async with httpx.AsyncClient(proxies=proxy, verify=verify) as client:
+                            async with client.stream(
+                                "GET",
+                                url,
+                                params=params,
+                                headers=headers,
+                                cookies=cookies,
+                                timeout=timeout,
+                                **kwargs
+                            ) as response:
+                                logger.info(f"开始下载 {path.name}.. Path: {path.absolute()}")
+                                async with aiofiles.open(path, "wb") as wf:
+                                    total = int(response.headers["Content-Length"])
+                                    with rich.progress.Progress(
+                                        rich.progress.TextColumn(path.name),
+                                        "[progress.percentage]{task.percentage:>3.0f}%",
+                                        rich.progress.BarColumn(bar_width=None),
+                                        rich.progress.DownloadColumn(),
+                                        rich.progress.TransferSpeedColumn()
+                                    ) as progress:
+                                        download_task = progress.add_task("Download", total=total)
+                                        async for chunk in response.aiter_bytes():
+                                            await wf.write(chunk)
+                                            await wf.flush()
+                                            progress.update(download_task, completed=response.num_bytes_downloaded)
+                                    logger.info(f"下载 {url} 成功.. Path：{path.absolute()}")
+                        return True
+                    except (TimeoutError, ConnectTimeout):
+                        pass
             else:
                 logger.error(f"下载 {url} 下载超时.. Path：{path.absolute()}")
         except Exception as e:
@@ -182,9 +224,9 @@ class AsyncHttpx:
         **kwargs,
     ) -> List[bool]:
         """
-        说明：
+        说明:
             分组同时下载文件
-        参数：
+        参数:
             :param url_list: url列表
             :param path_list: 存储路径列表
             :param limit_async_number: 限制同时请求数量
@@ -246,14 +288,27 @@ class AsyncPlaywright:
     @classmethod
     async def _new_page(cls, user_agent: Optional[str] = None, **kwargs) -> Page:
         """
-        说明：
+        说明:
             获取一个新页面
-        参数：
+        参数:
             :param user_agent: 请求头
         """
         browser = await get_browser()
         if browser:
             return await browser.new_page(user_agent=user_agent, **kwargs)
+        raise BrowserIsNone("获取Browser失败...")
+
+    @classmethod
+    async def new_context(cls, user_agent: Optional[str] = None, **kwargs) -> BrowserContext:
+        """
+        说明:
+            获取一个新上下文
+        参数:
+            :param user_agent: 请求头
+        """
+        browser = await get_browser()
+        if browser:
+            return await browser.new_context(user_agent=user_agent, **kwargs)
         raise BrowserIsNone("获取Browser失败...")
 
     @classmethod
@@ -269,9 +324,9 @@ class AsyncPlaywright:
         **kwargs
     ) -> Optional[Page]:
         """
-        说明：
+        说明:
             goto
-        参数：
+        参数:
             :param url: 网址
             :param timeout: 超时限制
             :param wait_until: 等待类型
@@ -305,9 +360,9 @@ class AsyncPlaywright:
         **kwargs
     ) -> Optional[MessageSegment]:
         """
-        说明：
+        说明:
             截图，该方法仅用于简单快捷截图，复杂截图请操作 page
-        参数：
+        参数:
             :param url: 网址
             :param path: 存储路径
             :param element: 元素选择
@@ -327,14 +382,14 @@ class AsyncPlaywright:
             await page.set_viewport_size(viewport_size)
             if isinstance(element, str):
                 if wait_time:
-                    card = await page.wait_for_selector(element, timeout=wait_time)
+                    card = await page.wait_for_selector(element, timeout=wait_time * 1000)
                 else:
                     card = await page.query_selector(element)
             else:
                 card = page
                 for e in element:
                     if wait_time:
-                        card = await card.wait_for_selector(e, timeout=wait_time)
+                        card = await card.wait_for_selector(e, timeout=wait_time * 1000)
                     else:
                         card = await card.query_selector(e)
             await card.screenshot(path=path, timeout=timeout, type=type_)

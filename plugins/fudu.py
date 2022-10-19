@@ -1,6 +1,8 @@
+from io import BytesIO
+import imagehash
+from PIL import Image
 from nonebot.adapters.onebot.v11.permission import GROUP
 from configs.path_config import TEMP_PATH
-from utils.image_utils import get_img_hash
 import random
 from utils.message_builder import image
 from nonebot import on_message
@@ -8,7 +10,7 @@ from utils.utils import get_message_img, get_message_text
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
 from configs.config import Config
 from utils.http_utils import AsyncHttpx
-from services.log import logger
+from configs.config import NICKNAME
 
 
 __zx_plugin_name__ = "复读"
@@ -74,22 +76,22 @@ class Fudu:
 _fudu_list = Fudu()
 
 
-fudu = on_message(permission=GROUP, priority=9)
+fudu = on_message(permission=GROUP, priority=999)
 
 
 @fudu.handle()
 async def _(event: GroupMessageEvent):
     if event.is_tome():
         return
-    if get_message_text(event.json()):
-        if get_message_text(event.json()).find("@可爱的小真寻") != -1:
+    if msg := get_message_text(event.json()):
+        if msg.startswith(f"@可爱的{NICKNAME}"):
             await fudu.finish("复制粘贴的虚空艾特？", at_sender=True)
     img = get_message_img(event.json())
     msg = get_message_text(event.json())
     if not img and not msg:
         return
     if img:
-        img_hash = await get_fudu_img_hash(img[0], event.group_id)
+        img_hash = await get_fudu_img_hash(img[0])
     else:
         img_hash = ""
     add_msg = msg + "|-|" + img_hash
@@ -105,31 +107,22 @@ async def _(event: GroupMessageEvent):
             "fudu", "FUDU_PROBABILITY"
         ) and not _fudu_list.is_repeater(event.group_id):
             if random.random() < 0.2:
-                await fudu.finish("[[_task|fudu]]打断施法！")
+                if msg.endswith("打断施法！"):
+                    await fudu.finish("[[_task|fudu]]打断" + msg)        
+                else:
+                    await fudu.finish("[[_task|fudu]]打断施法！")
             _fudu_list.set_repeater(event.group_id)
             if img and msg:
-                rst = msg + image(f"compare_{event.group_id}_img.jpg", "temp")
+                rst = msg + image(TEMP_PATH / f"compare_{event.group_id}_img.jpg")
             elif img:
-                rst = image(f"compare_{event.group_id}_img.jpg", "temp")
+                rst = image(TEMP_PATH / f"compare_{event.group_id}_img.jpg")
             elif msg:
                 rst = msg
             else:
                 rst = ""
             if rst:
-                if rst.endswith("打断施法！"):
-                    rst = "打断" + rst
-                await fudu.send("[[_task|fudu]]" + rst)
+                await fudu.finish("[[_task|fudu]]" + rst)
 
 
-async def get_fudu_img_hash(url, group_id):
-    try:
-        if await AsyncHttpx.download_file(
-            url, TEMP_PATH / f"compare_{group_id}_img.jpg"
-        ):
-            img_hash = get_img_hash(TEMP_PATH / f"compare_{group_id}_img.jpg")
-            return str(img_hash)
-        else:
-            logger.warning(f"复读下载图片失败...")
-    except Exception as e:
-        logger.warning(f"复读读取图片Hash出错 {type(e)}：{e}")
-    return ""
+async def get_fudu_img_hash(url):
+    return str(imagehash.average_hash(Image.open(BytesIO((await AsyncHttpx.get(url)).content))))

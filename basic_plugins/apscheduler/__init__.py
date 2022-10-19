@@ -4,9 +4,8 @@ from nonebot import on_message
 from services.log import logger
 from models.group_info import GroupInfo
 from models.friend_user import FriendUser
-from nonebot.adapters.onebot.v11.exception import ActionFailed
+from nonebot.adapters.onebot.v11 import ActionFailed
 from configs.config import NICKNAME, Config
-from utils.manager import group_manager
 from pathlib import Path
 import shutil
 
@@ -42,7 +41,7 @@ Config.add_plugin_config(
 )
 
 
-cx = on_message(priority=9, block=False)
+cx = on_message(priority=9999, block=False, rule=lambda: False)
 
 
 # 早上好
@@ -61,7 +60,7 @@ async def _():
             try:
                 await bot.send_group_msg(group_id=g, message="[[_task|zwa]]早上好" + result)
             except ActionFailed:
-                logger.warning(f"{g} 群被禁言中，无法发送早安")
+                logger.warning(f"{g} 发送早安失败")
     except Exception as e:
         logger.error(f"早晚安错误 e:{e}")
 
@@ -84,7 +83,7 @@ async def _():
                     group_id=g, message=f"[[_task|zwa]]{NICKNAME}要睡觉了，你们也要早点睡呀" + result
                 )
             except ActionFailed:
-                logger.warning(f"{g} 群被禁言中，无法发送晚安")
+                logger.warning(f"{g} 发送晚安失败")
     except Exception as e:
         logger.error(f"早晚安错误 e:{e}")
 
@@ -107,6 +106,7 @@ async def _():
                 group_info["group_name"],
                 group_info["max_member_count"],
                 group_info["member_count"],
+                1
             )
             logger.info(f"自动更新群组 {g} 信息成功")
     except Exception as e:

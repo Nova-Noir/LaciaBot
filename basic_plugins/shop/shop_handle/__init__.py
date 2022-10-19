@@ -1,12 +1,11 @@
-from .data_source import create_shop_help, delete_goods, update_goods, register_goods, parse_goods_info
+from .data_source import create_shop_help, delete_goods, update_goods, register_goods, parse_goods_info, GoodsInfo
 from nonebot.adapters.onebot.v11 import MessageEvent, Message
 from nonebot import on_command
 from configs.path_config import IMAGE_PATH
 from utils.message_builder import image
 from nonebot.permission import SUPERUSER
-from utils.utils import is_number
+from utils.utils import is_number, scheduler
 from nonebot.params import CommandArg
-from nonebot.plugin import export
 from services.log import logger
 import os
 
@@ -51,11 +50,6 @@ __plugin_block_limit__ = {
     "limit_type": "group"
 }
 
-# 导出方法供其他插件使用
-export = export()
-export.register_goods = register_goods
-export.delete_goods = delete_goods
-export.update_goods = update_goods
 
 shop_help = on_command("商店", priority=5, block=True)
 
@@ -128,6 +122,18 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
             await shop_update_goods.send(f"修改商品 {name} 成功了...\n{text}", at_sender=True)
             logger.info(f"USER {event.user_id} 修改商品 {name} 数据 {text} 成功")
         else:
-            await shop_update_goods.send(f"修改商品 {name} 失败了...", at_sender=True)
+            await shop_update_goods.send(name, at_sender=True)
             logger.info(f"USER {event.user_id} 修改商品 {name} 数据 {text} 失败")
 
+
+@scheduler.scheduled_job(
+    "cron",
+    hour=0,
+    minute=0,
+)
+async def _():
+    try:
+        await GoodsInfo.reset_daily_purchase()
+        logger.info("商品每日限购次数重置成功...")
+    except Exception as e:
+        logger.error(f"商品每日限购次数重置发生错误 {type(e)}：{e}")

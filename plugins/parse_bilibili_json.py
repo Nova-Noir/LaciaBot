@@ -1,11 +1,11 @@
 from nonebot import on_message
 from services.log import logger
-from nonebot.adapters.onebot.v11 import GroupMessageEvent
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, ActionFailed
+
+from utils.manager import group_manager
 from utils.utils import get_message_json, get_local_proxy, is_number, get_message_text
 from nonebot.adapters.onebot.v11.permission import GROUP
-from bilibili_api import video
 from utils.message_builder import image
-from nonebot.adapters.onebot.v11.exception import ActionFailed
 from utils.image_utils import BuildImage
 from utils.browser import get_browser
 from configs.path_config import IMAGE_PATH
@@ -15,10 +15,8 @@ from utils.user_agent import get_user_agent
 import aiohttp
 import asyncio
 import time
-from bilibili_api import settings
 import ujson as json
-
-
+from bilireq import video
 __zx_plugin_name__ = "B站转发解析"
 __plugin_usage__ = """
 usage：
@@ -38,10 +36,10 @@ Config.add_plugin_config(
 )
 
 
-if get_local_proxy():
-    settings.proxy = get_local_proxy()
+async def plugin_on_checker(event: GroupMessageEvent) -> bool:
+    return group_manager.get_plugin_status("parse_bilibili_json", event.group_id)
 
-parse_bilibili_json = on_message(priority=1, permission=GROUP, block=False)
+parse_bilibili_json = on_message(priority=1, permission=GROUP, block=False, rule=plugin_on_checker)
 
 _tmp = {}
 
@@ -63,18 +61,11 @@ async def _(event: GroupMessageEvent):
                 ) as session:
                     async with session.get(
                             data["meta"]["detail_1"]["qqdocurl"],
-                            proxy=get_local_proxy(),
                             timeout=7,
                     ) as response:
                         url = str(response.url).split("?")[0]
                         bvid = url.split("/")[-1]
-                        vd_info = await video.Video(bvid=bvid).get_info()
-                # response = await AsyncHttpx.get(
-                #     data["meta"]["detail_1"]["qqdocurl"], timeout=7
-                # )
-                # url = str(response.url).split("?")[0]
-                # bvid = url.split("/")[-1]
-                # vd_info = await video.Video(bvid=bvid).get_info()
+                        vd_info = await video.get_video_base_info(bvid)
             # 转发专栏
             if (
                 data.get("meta")
@@ -121,20 +112,26 @@ async def _(event: GroupMessageEvent):
             if len(msg[index + 2 :]) >= 10:
                 msg = msg[index : index + 12]
                 url = f"https://www.bilibili.com/video/{msg}"
-                vd_info = await video.Video(bvid=msg).get_info()
+                vd_info = await video.get_video_base_info(msg)
         elif "av" in msg:
             index = msg.find("av")
-            if len(msg[index + 2 :]) >= 9:
+            if len(msg[index + 2 :]) >= 1:
                 msg = msg[index + 2 : index + 11]
                 if is_number(msg):
-                    url = f"https://www.bilibili.com/video/{msg}"
-                    vd_info = await video.Video(aid=int(msg)).get_info()
+                    url = f"https://www.bilibili.com/video/av{msg}"
+                    vd_info = await video.get_video_base_info('av' + msg)
         elif "https://b23.tv" in msg:
-            url = "https://" + msg[msg.find("b23.tv") : msg.find("b23.tv") + 13]
-            res = await AsyncHttpx.get(url, timeout=7)
-            url = str(res.url).split("?")[0]
-            bvid = url.split("/")[-1]
-            vd_info = await video.Video(bvid=bvid).get_info()
+            url = "https://" + msg[msg.find("b23.tv"): msg.find("b23.tv") + 14]
+            async with aiohttp.ClientSession(
+                    headers=get_user_agent()
+            ) as session:
+                async with session.get(
+                        url,
+                        timeout=7,
+                ) as response:
+                    url = (str(response.url).split("?")[0]).strip("/")
+                    bvid = url.split("/")[-1]
+                    vd_info = await video.get_video_base_info(bvid)
     if vd_info:
         if (
             url in _tmp.keys() and time.time() - _tmp[url] > 30

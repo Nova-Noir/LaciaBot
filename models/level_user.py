@@ -1,3 +1,5 @@
+from asyncpg import UniqueViolationError
+
 from services.db_context import db
 
 
@@ -15,9 +17,9 @@ class LevelUser(db.Model):
     @classmethod
     async def get_user_level(cls, user_qq: int, group_id: int) -> int:
         """
-        说明：
+        说明:
             获取用户在群内的等级
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 群号
         """
@@ -33,9 +35,9 @@ class LevelUser(db.Model):
         cls, user_qq: int, group_id: int, level: int, group_flag: int = 0
     ) -> bool:
         """
-        说明：
+        说明:
             设置用户在群内的权限
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 群号
             :param level: 权限等级
@@ -44,24 +46,27 @@ class LevelUser(db.Model):
         query = cls.query.where((cls.user_qq == user_qq) & (cls.group_id == group_id))
         query = query.with_for_update()
         user = await query.gino.first()
-        if user is None:
-            await cls.create(
-                user_qq=user_qq,
-                group_id=group_id,
-                user_level=level,
-                group_flag=group_flag,
-            )
-            return True
-        else:
-            await user.update(user_level=level, group_flag=group_flag).apply()
+        try:
+            if not user:
+                await cls.create(
+                    user_qq=user_qq,
+                    group_id=group_id,
+                    user_level=level,
+                    group_flag=group_flag,
+                )
+                return True
+            else:
+                await user.update(user_level=level, group_flag=group_flag).apply()
+                return False
+        except UniqueViolationError:
             return False
 
     @classmethod
     async def delete_level(cls, user_qq: int, group_id: int) -> bool:
         """
-        说明：
+        说明:
             删除用户权限
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 群号
         """
@@ -77,9 +82,9 @@ class LevelUser(db.Model):
     @classmethod
     async def check_level(cls, user_qq: int, group_id: int, level: int) -> bool:
         """
-        说明：
+        说明:
             检查用户权限等级是否大于 level
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 群号
             :param level: 权限等级
@@ -107,9 +112,9 @@ class LevelUser(db.Model):
     @classmethod
     async def is_group_flag(cls, user_qq: int, group_id: int) -> bool:
         """
-        说明：
+        说明:
             检测是否会被自动更新刷新权限
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 群号
         """

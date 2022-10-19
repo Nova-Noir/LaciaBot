@@ -2,6 +2,7 @@ from configs.path_config import IMAGE_PATH, TEMP_PATH
 from utils.message_builder import image
 from services.log import logger
 from utils.image_utils import get_img_hash, compressed_image
+from utils.utils import change_img_md5
 from asyncpg.exceptions import UniqueViolationError
 from asyncio.exceptions import TimeoutError
 from typing import List, Optional
@@ -11,6 +12,7 @@ from .._model import Setu
 import asyncio
 import os
 import random
+import re
 
 try:
     import ujson as json
@@ -21,6 +23,7 @@ except ModuleNotFoundError:
 url = "https://api.lolicon.app/setu/v2"
 path = "_setu"
 r18_path = "_r18"
+host_pattern = re.compile(r"https?://([^/]+)")
 
 
 # 获取url
@@ -31,7 +34,7 @@ async def get_setu_urls(
     params = {
         "r18": r18,  # 添加r18参数 0为否，1为是，2为混合
         "tag": tags,  # 若指定tag
-        "num": 100,  # 一次返回的结果数量
+        "num": 20,  # 一次返回的结果数量
         "size": ["original"],
     }
     for count in range(3):
@@ -88,7 +91,9 @@ async def search_online_setu(
     """
     ws_url = Config.get_config("pixiv", "PIXIV_NGINX_URL")
     if ws_url:
-        url_ = url_.replace("i.pximg.net", ws_url).replace("i.pixiv.cat", ws_url)
+        host_match = re.match(host_pattern, url_)
+        host = host_match.group(1)
+        url_ = url_.replace(host, ws_url)
     index = random.randint(1, 100000) if id_ is None else id_
     path_ = IMAGE_PATH / path_ if path_ else TEMP_PATH
     file_name = f"{index}_temp_setu.jpg" if path_ == TEMP_PATH else f"{index}.jpg"
@@ -111,6 +116,7 @@ async def search_online_setu(
                         path_ / f"{index}.jpg",
                     )
             logger.info(f"下载 lolicon 图片 {url_} 成功， id：{index}")
+            change_img_md5(path_ / file_name)
             return image(path_ / file_name), index
         except TimeoutError:
             pass
@@ -128,6 +134,7 @@ async def check_local_exists_or_download(setu_image: Setu) -> "MessageSegment, i
         path_ = r18_path if setu_image.is_r18 else path
         file = IMAGE_PATH / path_ / f"{setu_image.local_id}.jpg"
         if file.exists():
+            change_img_md5(file)
             return image(f"{setu_image.local_id}.jpg", path_), 200
     return await search_online_setu(setu_image.img_url, id_, path_)
 

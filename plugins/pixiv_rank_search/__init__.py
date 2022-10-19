@@ -1,11 +1,10 @@
-from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, Message
+from nonebot.adapters.onebot.v11 import Bot, MessageEvent, GroupMessageEvent, Message, NetworkError
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg
 from nonebot import on_command
 from utils.utils import is_number
 from .data_source import get_pixiv_urls, download_pixiv_imgs, search_pixiv_urls
 from services.log import logger
-from nonebot.adapters.onebot.v11.exception import NetworkError
 from asyncio.exceptions import TimeoutError
 from utils.message_builder import custom_forward_msg
 from configs.config import Config
@@ -18,7 +17,7 @@ __zx_plugin_name__ = "P站排行/搜图"
 __plugin_usage__ = """
 usage：
     P站排行：
-        可选参数：
+        可选参数:
         类型：
             1. 日排行
             2. 周排行
@@ -44,6 +43,8 @@ usage：
             搜图 樱岛麻衣
             搜图 樱岛麻衣 5
             搜图 樱岛麻衣 5 r18
+            搜图 樱岛麻衣#1000users 5
+        【多个关键词用#分割】
         【默认为 热度排序】
         【注意空格！！】【在线搜索会较慢】【数量可能不符？可能该页数量不够，也可能被R-18屏蔽】
 """.strip()
@@ -69,6 +70,11 @@ __plugin_configs__ = {
         "value": 20,
         "help": "作品最大页数限制，超过的作品会被略过",
         "default_value": 20
+    },
+    "ALLOW_GROUP_R18": {
+        "value": False,
+        "help": "允许群聊中使用 r18 参数",
+        "default_value": False
     }
 }
 Config.add_plugin_config(
@@ -152,7 +158,7 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     msg = arg.extract_plain_text().strip()
     if isinstance(event, GroupMessageEvent):
-        if "r18" in msg.lower():
+        if "r18" in msg.lower() and not Config.get_config("pixiv_rank_search", "ALLOW_GROUP_R18"):
             await pixiv_keyword.finish("(脸红#) 你不会害羞的 八嘎！", at_sender=True)
     r18 = 0 if "r18" in msg else 1
     msg = msg.replace("r18", "").strip().split()
@@ -161,8 +167,8 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     info_list = None
     num = 10
     page = 1
-    if (n := len(msg)) == 1:
-        keyword = msg[0]
+    if (n := len(msg)) > 0:
+        keyword = msg[0].replace("#"," ")
     if n > 1:
         if not is_number(msg[1]):
             await pixiv_keyword.finish("图片数量必须是数字！", at_sender=True)

@@ -1,5 +1,4 @@
-from typing import Optional, List
-from datetime import datetime
+from typing import Optional, List, Tuple
 from services.db_context import db
 
 
@@ -12,13 +11,12 @@ class OmegaPixivIllusts(db.Model):
     uid = db.Column(db.BigInteger(), nullable=False)
     title = db.Column(db.String(), nullable=False)
     uname = db.Column(db.String(), nullable=False)
+    classified = db.Column(db.Integer(), nullable=False)
     nsfw_tag = db.Column(db.Integer(), nullable=False)
     width = db.Column(db.Integer(), nullable=False)
     height = db.Column(db.Integer(), nullable=False)
     tags = db.Column(db.String(), nullable=False)
     url = db.Column(db.String(), nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True))
-    updated_at = db.Column(db.DateTime(timezone=True))
 
     _idx1 = db.Index("omega_pixiv_illusts_idx1", "pid", "url", unique=True)
 
@@ -32,15 +30,14 @@ class OmegaPixivIllusts(db.Model):
             url: str,
             uid: int,
             uname: str,
+            classified: int,
             nsfw_tag: int,
             tags: str,
-            created_at: datetime,
-            updated_at: datetime,
     ):
         """
-        说明：
+        说明:
             添加图片信息
-        参数：
+        参数:
             :param pid: pid
             :param title: 标题
             :param width: 宽度
@@ -48,10 +45,9 @@ class OmegaPixivIllusts(db.Model):
             :param url: url链接
             :param uid: 作者uid
             :param uname: 作者名称
-            :param nsfw_tag: nsfw标签, 0=safe, 1=setu. 2=r18
+            :param classified: 标记标签, 0=未标记, 1=已人工标记或从可信已标记来源获取
+            :param nsfw_tag: nsfw标签,-1=未标记, 0=safe, 1=setu. 2=r18
             :param tags: 相关tag
-            :param created_at: 创建日期
-            :param updated_at: 更新日期
         """
         if not await cls.check_exists(pid):
             await cls.create(
@@ -62,6 +58,7 @@ class OmegaPixivIllusts(db.Model):
                 url=url,
                 uid=uid,
                 uname=uname,
+                classified=classified,
                 nsfw_tag=nsfw_tag,
                 tags=tags,
             )
@@ -78,9 +75,9 @@ class OmegaPixivIllusts(db.Model):
             num: int = 100
     ) -> List[Optional["OmegaPixivIllusts"]]:
         """
-        说明：
+        说明:
             查找符合条件的图片
-        参数：
+        参数:
             :param keywords: 关键词
             :param uid: 画师uid
             :param pid: 图片pid
@@ -104,20 +101,20 @@ class OmegaPixivIllusts(db.Model):
     @classmethod
     async def check_exists(cls, pid: int) -> bool:
         """
-        说明：
+        说明:
             检测pid是否已存在
-        参数：
+        参数:
             :param pid: 图片PID
         """
         query = await cls.query.where(cls.pid == pid).gino.all()
         return bool(query)
 
     @classmethod
-    async def get_keyword_num(cls, tags: List[str] = None) -> "int, int, int":
+    async def get_keyword_num(cls, tags: List[str] = None) -> Tuple[int, int, int]:
         """
-        说明：
+        说明:
             获取相关关键词(keyword, tag)在图库中的数量
-        参数：
+        参数:
             :param tags: 关键词/Tag
         """
         setattr(OmegaPixivIllusts, 'count', db.func.count(cls.pid).label('count'))
@@ -133,21 +130,20 @@ class OmegaPixivIllusts(db.Model):
     @classmethod
     async def get_all_pid(cls) -> List[int]:
         """
-        说明：
+        说明:
             获取所有图片PID
         """
         data = await cls.select('pid').gino.all()
         return [x[0] for x in data]
 
-    @classmethod
-    async def test(cls, nsfw_tag: int = 1):
-        if nsfw_tag is not None:
-            query = cls.query.where(cls.nsfw_tag == nsfw_tag)
-        else:
-            query = cls.query
-        query = query.where((cls.width - cls.height) < 50)
-        for x in await query.gino.all():
-            print(x.pid)
+    # async def test(cls, nsfw_tag: int = 1):
+    #     if nsfw_tag is not None:
+    #         query = cls.query.where(cls.nsfw_tag == nsfw_tag)
+    #     else:
+    #         query = cls.query
+    #     query = query.where((cls.width - cls.height) < 50)
+    #     for x in await query.gino.all():
+    #         print(x.pid)
 
 
 

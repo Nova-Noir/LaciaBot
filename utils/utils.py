@@ -1,10 +1,12 @@
 from datetime import datetime
 from collections import defaultdict
 from nonebot import require
-from configs.config import SYSTEM_PROXY
+from configs.config import SYSTEM_PROXY, Config
 from typing import List, Union, Optional, Type, Any
 from nonebot.adapters.onebot.v11 import Bot, Message
 from nonebot.matcher import matchers, Matcher
+from services.log import logger
+from pathlib import Path
 import httpx
 import nonebot
 import pytz
@@ -16,7 +18,17 @@ try:
 except ModuleNotFoundError:
     import json
 
-scheduler = require("nonebot_plugin_apscheduler").scheduler
+require("nonebot_plugin_apscheduler")
+from nonebot_plugin_apscheduler import scheduler
+
+scheduler = scheduler
+
+# 全局字典
+GDict = {
+    "run_sql": [],                  # 需要启动前运行的sql语句
+    "_shop_before_handle": {},      # 商品使用前函数
+    "_shop_after_handle": {},      # 商品使用后函数
+}
 
 
 class CountLimiter:
@@ -147,9 +159,9 @@ class DailyNumberLimiter:
 
 def is_number(s: str) -> bool:
     """
-    说明：
+    说明:
         检测 s 是否为数字
-    参数：
+    参数:
         :param s: 文本
     """
     try:
@@ -169,7 +181,7 @@ def is_number(s: str) -> bool:
 
 def get_bot() -> Optional[Bot]:
     """
-    说明：
+    说明:
         获取 bot 对象
     """
     try:
@@ -178,22 +190,29 @@ def get_bot() -> Optional[Bot]:
         return None
 
 
-def get_matchers() -> List[Type[Matcher]]:
+def get_matchers(distinct: bool = False) -> List[Type[Matcher]]:
     """
-    获取所有插件
+    说明:
+        获取所有matcher
+    参数:
+        distinct: 去重
     """
     _matchers = []
+    temp = []
     for i in matchers.keys():
         for matcher in matchers[i]:
+            if distinct and matcher.plugin_name in temp:
+                continue
+            temp.append(matcher.plugin_name)
             _matchers.append(matcher)
     return _matchers
 
 
 def get_message_at(data: Union[str, Message]) -> List[int]:
     """
-    说明：
+    说明:
         获取消息中所有的 at 对象的 qq
-    参数：
+    参数:
         :param data: event.json()
     """
     qq_list = []
@@ -202,15 +221,18 @@ def get_message_at(data: Union[str, Message]) -> List[int]:
         for msg in data["message"]:
             if msg["type"] == "at":
                 qq_list.append(int(msg["data"]["qq"]))
-
+    else:
+        for seg in data:
+            if seg.type == "at":
+                qq_list.append(seg.data["qq"])
     return qq_list
 
 
 def get_message_img(data: Union[str, Message]) -> List[str]:
     """
-    说明：
+    说明:
         获取消息中所有的 图片 的链接
-    参数：
+    参数:
         :param data: event.json()
     """
     img_list = []
@@ -225,11 +247,30 @@ def get_message_img(data: Union[str, Message]) -> List[str]:
     return img_list
 
 
+def get_message_face(data: Union[str, Message]) -> List[str]:
+    """
+    说明:
+        获取消息中所有的 face Id
+    参数:
+        :param data: event.json()
+    """
+    face_list = []
+    if isinstance(data, str):
+        data = json.loads(data)
+        for msg in data["message"]:
+            if msg["type"] == "face":
+                face_list.append(msg["data"]["id"])
+    else:
+        for seg in data["face"]:
+            face_list.append(seg.data["id"])
+    return face_list
+
+
 def get_message_img_file(data: Union[str, Message]) -> List[str]:
     """
-    说明：
+    说明:
         获取消息中所有的 图片file
-    参数：
+    参数:
         :param data: event.json()
     """
     file_list = []
@@ -246,9 +287,9 @@ def get_message_img_file(data: Union[str, Message]) -> List[str]:
 
 def get_message_text(data: Union[str, Message]) -> str:
     """
-    说明：
+    说明:
         获取消息中 纯文本 的信息
-    参数：
+    参数:
         :param data: event.json()
     """
     result = ""
@@ -261,14 +302,14 @@ def get_message_text(data: Union[str, Message]) -> str:
     else:
         for seg in data["text"]:
             result += seg.data["text"] + " "
-    return result
+    return result.strip()
 
 
 def get_message_record(data: Union[str, Message]) -> List[str]:
     """
-    说明：
+    说明:
         获取消息中所有 语音 的链接
-    参数：
+    参数:
         :param data: event.json()
     """
     record_list = []
@@ -285,9 +326,9 @@ def get_message_record(data: Union[str, Message]) -> List[str]:
 
 def get_message_json(data: str) -> List[dict]:
     """
-    说明：
+    说明:
         获取消息中所有 json
-    参数：
+    参数:
         :param data: event.json()
     """
     try:
@@ -303,7 +344,7 @@ def get_message_json(data: str) -> List[dict]:
 
 def get_local_proxy():
     """
-    说明：
+    说明:
         获取 config.py 中设置的代理
     """
     return SYSTEM_PROXY if SYSTEM_PROXY else None
@@ -311,9 +352,9 @@ def get_local_proxy():
 
 def is_chinese(word: str) -> bool:
     """
-    说明：
+    说明:
         判断字符串是否为纯中文
-    参数：
+    参数:
         :param word: 文本
     """
     for ch in word:
@@ -324,9 +365,9 @@ def is_chinese(word: str) -> bool:
 
 async def get_user_avatar(qq: int) -> Optional[bytes]:
     """
-    说明：
+    说明:
         快捷获取用户头像
-    参数：
+    参数:
         :param qq: qq号
     """
     url = f"http://q1.qlogo.cn/g?b=qq&nk={qq}&s=160"
@@ -341,9 +382,9 @@ async def get_user_avatar(qq: int) -> Optional[bytes]:
 
 async def get_group_avatar(group_id: int) -> Optional[bytes]:
     """
-    说明：
+    说明:
         快捷获取用群头像
-    参数：
+    参数:
         :param group_id: 群号
     """
     url = f"http://p.qlogo.cn/gh/{group_id}/{group_id}/640/"
@@ -358,9 +399,9 @@ async def get_group_avatar(group_id: int) -> Optional[bytes]:
 
 def cn2py(word: str) -> str:
     """
-    说明：
+    说明:
         将字符串转化为拼音
-    参数：
+    参数:
         :param word: 文本
     """
     temp = ""
@@ -373,9 +414,9 @@ def change_pixiv_image_links(
         url: str, size: Optional[str] = None, nginx_url: Optional[str] = None
 ):
     """
-    说明：
+    说明:
         根据配置改变图片大小和反代链接
-    参数：
+    参数:
         :param url: 图片原图链接
         :param size: 模式
         :param nginx_url: 反代
@@ -385,6 +426,8 @@ def change_pixiv_image_links(
         url = img_sp[0]
         img_type = img_sp[1]
         url = url.replace("original", "master") + f"_master1200.{img_type}"
+    if not nginx_url:
+        nginx_url = Config.get_config("pixiv", "PIXIV_NGINX_URL")
     if nginx_url:
         url = (
             url.replace("i.pximg.net", nginx_url)
@@ -392,3 +435,19 @@ def change_pixiv_image_links(
                 .replace("_webp", "")
         )
     return url
+
+
+def change_img_md5(path_file: Union[str, Path]) -> bool:
+    """
+    说明:
+        改变图片MD5
+    参数:
+    :param path_file: 图片路径
+    """
+    try:
+        with open(path_file, "a") as f:
+            f.write(str(int(time.time() * 1000)))
+        return True
+    except Exception as e:
+        logger.warning(f"改变图片MD5发生错误 {type(e)}：{e} Path：{path_file}")
+        return False

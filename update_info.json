@@ -8,9 +8,10 @@
       "configs/path_config.py",
       "configs/utils",
       "poetry.lock",
-      "pyproject.toml",
-      "resources/font"
+      "pyproject.toml"
     ],
-    "add_file": [],
+    "add_file": [
+      "resources/image/shop_icon"
+    ],
     "delete_file": []
 }

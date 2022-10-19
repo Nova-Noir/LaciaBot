@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Tuple, Any
 from nonebot import on_command
 from nonebot.matcher import Matcher
 from utils.utils import scheduler, is_number
@@ -9,7 +9,7 @@ from nonebot.permission import SUPERUSER
 import random
 from nonebot.plugin import MatcherGroup
 from configs.path_config import IMAGE_PATH
-from nonebot.params import CommandArg
+from nonebot.params import CommandArg, RegexGroup
 from .open_cases_c import (
     open_case,
     total_open_statistics,
@@ -43,6 +43,7 @@ usage：
 __plugin_superuser_usage__ = """
 usage：
     更新皮肤指令
+    重置开箱： 重置今日开箱所有次数
     指令：
         更新开箱图片 ?[武器箱]
         更新开箱价格 ?[武器箱]
@@ -100,6 +101,13 @@ cases_matcher_group = MatcherGroup(priority=5, permission=GROUP, block=True)
 
 k_open_case = cases_matcher_group.on_command("开箱")
 
+reload_count = cases_matcher_group.on_command("重置开箱",permission=SUPERUSER)
+
+
+@reload_count.handle()
+async def _(event: GroupMessageEvent):
+    await update_count_daily()
+
 
 @k_open_case.handle()
 async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
@@ -145,12 +153,12 @@ async def _(event: GroupMessageEvent):
     )
 
 
-open_shilian: Type[Matcher] = cases_matcher_group.on_regex("(.*)连开箱(.*?)")
+open_shilian: Type[Matcher] = cases_matcher_group.on_regex("(.*)连开箱(.*)?")
 
 
 @open_shilian.handle()
-async def _(event: GroupMessageEvent, state: T_State):
-    num = state["_matched_groups"][0].strip()
+async def _(event: GroupMessageEvent, state: T_State, reg_group: Tuple[Any, ...] = RegexGroup()):
+    num, case_name = reg_group
     if is_number(num) or num_dict.get(num):
         try:
             num = num_dict[num]
@@ -162,7 +170,6 @@ async def _(event: GroupMessageEvent, state: T_State):
             await open_shilian.finish("再负开箱就扣你明天开箱数了！", at_sender=True)
     else:
         await open_shilian.finish("必须要是数字切不要超过30啊笨蛋！中文也可！", at_sender=True)
-    case_name = state["_matched_groups"][1].strip()
     case_name = case_name.replace("武器箱", "").strip()
     if not case_name:
         case_name = random.choice(cases_name)
@@ -212,16 +219,16 @@ update_price = on_command("更新开箱价格", priority=1, permission=SUPERUSER
 
 
 @update_price.handle()
-async def _( event: MessageEvent):
-    await update_price.send(await util_get_buff_price(str(event.get_message())))
+async def _(event: MessageEvent, arg: Message = CommandArg()):
+    await update_price.send(await util_get_buff_price(arg.extract_plain_text().strip() or "狂牙大行动"))
 
 
 update_img = on_command("更新开箱图片", priority=1, permission=SUPERUSER, block=True)
 
 
 @update_img.handle()
-async def _(event: MessageEvent):
-    await update_img.send(await util_get_buff_img(str(event.get_message())))
+async def _(event: MessageEvent, arg: Message = CommandArg()):
+    await update_img.send(await util_get_buff_img(arg.extract_plain_text().strip() or "狂牙大行动"))
 
 
 # 重置开箱

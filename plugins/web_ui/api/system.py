@@ -29,7 +29,7 @@ disk_data = {"data": []}
 
 
 @app.get("/webui/system")
-async def _(user: User = Depends(token_to_user)) -> Result:
+async def _() -> Result:
     return await get_system_data()
 
 
@@ -74,9 +74,9 @@ async def _(user: User = Depends(token_to_user)) -> Result:
     )
 
 
-async def get_system_data():
+async def get_system_data(user: User = Depends(token_to_user)):
     """
-    说明：
+    说明:
         获取系统信息，资源文件大小，网络状态等
     """
     baidu = 200
@@ -92,7 +92,7 @@ async def get_system_data():
         logger.warning(f"访问Google失败... {type(e)}: {e}")
         google = 404
     network = SystemNetwork(baidu=baidu, google=google)
-    disk = await asyncio.get_event_loop().run_in_executor(None, _get_system_disk)
+    disk = await asyncio.get_event_loop().run_in_executor(None, _get_system_disk, None)
     status = await asyncio.get_event_loop().run_in_executor(None, _get_system_status)
     return Result(
         code=200,
@@ -105,9 +105,9 @@ async def get_system_data():
     )
 
 
-def _get_system_status() -> SystemStatus:
+def _get_system_status(user: User = Depends(token_to_user)) -> SystemStatus:
     """
-    说明：
+    说明:
         获取系统信息等
     """
     cpu = psutil.cpu_percent()
@@ -123,10 +123,10 @@ def _get_system_status() -> SystemStatus:
 
 
 def _get_system_disk(
-    type_: Optional[str],
+    type_: Optional[str], user: User = Depends(token_to_user)
 ) -> Union[SystemFolderSize, Dict[str, Union[float, datetime]]]:
     """
-    说明：
+    说明:
         获取资源文件大小等
     """
     if not type_:
@@ -171,9 +171,9 @@ def _get_system_disk(
 
 def _get_dir_size(dir_path: Path) -> float:
     """
-    说明：
+    说明:
         获取文件夹大小
-    参数：
+    参数:
         :param dir_path: 文件夹路径
     """
     size = 0
@@ -184,9 +184,9 @@ def _get_dir_size(dir_path: Path) -> float:
 
 def save_system_data(cpu: float, memory: float, disk: float):
     """
-    说明：
+    说明:
         保存一些系统信息
-    参数：
+    参数:
         :param cpu: cpu
         :param memory: memory
         :param disk: disk

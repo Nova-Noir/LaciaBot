@@ -8,6 +8,7 @@ from nonebot.adapters.onebot.v11 import (
 from nonebot.matcher import Matcher
 from nonebot.message import run_preprocessor
 from utils.image_utils import BuildImage
+from utils.manager import group_manager
 from utils.utils import get_message_text, is_number
 from nonebot.params import RegexGroup, CommandArg
 from .utils import black_word_manager
@@ -155,7 +156,11 @@ async def _(
         and matcher.plugin_name == "black_word"
         and not await BanUser.is_ban(event.user_id)
         and str(event.user_id) not in bot.config.superusers
+        and not get_message_text(event.json()).startswith("原神绑定")
     ):
+        # 屏蔽群权限-1的群
+        if isinstance(event, GroupMessageEvent) and group_manager.get_group_level(event.group_id) < 0:
+            return
         user_id = event.user_id
         group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
         msg = get_message_text(event.json())
@@ -241,7 +246,6 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
     uid = int(msg[0])
     id_ = int(msg[1])
     punish_level = int(msg[2])
-    print(uid, id_, punish_level)
     rst = await set_user_punish(uid, id_, punish_level)
     await set_punish.send(rst)
     logger.info(

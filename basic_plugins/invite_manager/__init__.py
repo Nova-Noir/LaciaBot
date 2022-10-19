@@ -1,6 +1,7 @@
 from nonebot import on_request, on_message
 from nonebot.adapters.onebot.v11 import (
     Bot,
+    ActionFailed,
     FriendRequestEvent,
     GroupRequestEvent,
     MessageEvent,
@@ -8,7 +9,6 @@ from nonebot.adapters.onebot.v11 import (
 from models.friend_user import FriendUser
 from datetime import datetime
 from configs.config import NICKNAME, Config
-from nonebot.adapters.onebot.v11.exception import ActionFailed
 from utils.manager import requests_manager
 from models.group_info import GroupInfo
 from utils.utils import scheduler
@@ -25,7 +25,7 @@ __plugin_configs__ = {
 
 friend_req = on_request(priority=5, block=True)
 group_req = on_request(priority=5, block=True)
-x = on_message(priority=9, block=False)
+x = on_message(priority=999, block=False, rule=lambda: False)
 
 exists_data = {"private": {}, "group": {}}
 

@@ -87,13 +87,13 @@ task_data = None
 
 
 async def change_group_switch(cmd: str, group_id: int, is_super: bool = False):
-    global task_data
     """
     修改群功能状态
     :param cmd: 功能名称
     :param group_id: 群号
     :param is_super: 是否位超级用户，超级用户用于私聊开关功能状态
     """
+    global task_data
     if not task_data:
         task_data = group_manager.get_task_data()
     group_help_file = DATA_PATH / "group_help" / f"{group_id}.png"
@@ -118,10 +118,12 @@ async def change_group_switch(cmd: str, group_id: int, is_super: bool = False):
                 group_manager.unblock_plugin(f, group_id)
             else:
                 group_manager.block_plugin(f, group_id)
+        if group_help_file.exists():
+            group_help_file.unlink()
         return f"已 {status} 全部功能！"
-    if cmd in [task_data[x] for x in task_data.keys()]:
+    if cmd.lower() in [task_data[x].lower() for x in task_data.keys()]:
         type_ = "task"
-        modules = [x for x in task_data.keys() if task_data[x] == cmd]
+        modules = [x for x in task_data.keys() if task_data[x].lower() == cmd.lower()]
     for module in modules:
         if is_super:
             module = f"{module}:super"
@@ -232,10 +234,7 @@ async def update_member_info(group_id: int, remind_superuser: bool = False) -> b
     _exist_member_list = []
     # try:
     for user_info in _group_user_list:
-        if user_info["card"] == "":
-            nickname = user_info["nickname"]
-        else:
-            nickname = user_info["card"]
+        nickname = user_info["card"] or user_info["nickname"]
         async with db.transaction():
             # 更新权限
             if (
@@ -321,3 +320,4 @@ def set_group_bot_status(group_id: int, status: bool) -> str:
         # for x in group_manager.get_task_data():
         #     group_manager.close_group_task(group_id, x)
         return "那我先睡觉了..."
+

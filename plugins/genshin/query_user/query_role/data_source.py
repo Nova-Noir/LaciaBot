@@ -128,7 +128,7 @@ async def get_character(
 ) -> Optional[dict]:
     try:
         req = await AsyncHttpx.post(
-            url="https://api-takumi.mihoyo.com/game_record/app/genshin/api/character",
+            url="https://api-takumi-record.mihoyo.com/game_record/app/genshin/api/character",
             headers={
                 "Accept": "application/json, text/plain, */*",
                 "DS": get_ds(
@@ -182,7 +182,7 @@ def parsed_data(
     role_data = {
         "active_day_number": data["stats"]["active_day_number"],  # 活跃天数
         "achievement_number": data["stats"]["achievement_number"],  # 达成成就数量
-        "win_rate": data["stats"]["win_rate"],
+        # "win_rate": data["stats"]["win_rate"],
         "anemoculus_number": data["stats"]["anemoculus_number"],  # 风神瞳已收集
         "geoculus_number": data["stats"]["geoculus_number"],  # 岩神瞳已收集
         "avatar_number": data["stats"]["avatar_number"],  # 获得角色数量
@@ -195,6 +195,7 @@ def parsed_data(
         "magic_chest_number": data["stats"]["magic_chest_number"],  # 奇馈宝箱
         "common_chest_number": data["stats"]["common_chest_number"],  # 普通宝箱
         "electroculus_number": data["stats"]["electroculus_number"],  # 雷神瞳已收集
+        "dendroculus_number": data["stats"]["dendroculus_number"],  # 草神瞳已收集
     }
     world_data_dict = {}
     for world in data["world_explorations"]:
@@ -232,7 +233,7 @@ async def get_mys_data(uid: str, mys_id: Optional[str]) -> Optional[List[Dict]]:
     if mys_id:
         try:
             req = await AsyncHttpx.get(
-                url=f"https://api-takumi.mihoyo.com/game_record/card/wapi/getGameRecordCard?uid={mys_id}",
+                url=f"https://api-takumi-record.mihoyo.com/game_record/card/wapi/getGameRecordCard?uid={mys_id}",
                 headers={
                     "DS": get_ds(f"uid={mys_id}"),
                     "x-rpc-app_version": Config.get_config("genshin", "mhyVersion"),

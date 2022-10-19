@@ -47,9 +47,9 @@ class BilibiliSub(db.Model):
         season_update_time: Optional[datetime] = None,
     ) -> bool:
         """
-        说明：
+        说明:
             添加订阅
-        参数：
+        参数:
             :param sub_id: 订阅名称，房间号，番剧号等
             :param sub_type: 订阅类型
             :param sub_user: 订阅此条目的用户
@@ -65,44 +65,43 @@ class BilibiliSub(db.Model):
             :param season_update_time: 番剧更新时间
         """
         try:
-            async with db.transaction():
-                query = (
-                    await cls.query.where(cls.sub_id == sub_id)
-                    .with_for_update()
-                    .gino.first()
+            query = (
+                await cls.query.where(cls.sub_id == sub_id)
+                .with_for_update()
+                .gino.first()
+            )
+            sub_user = sub_user if sub_user[-1] == "," else f"{sub_user},"
+            if query:
+                if sub_user not in query.sub_users:
+                    sub_users = query.sub_users + sub_user
+                    await query.update(sub_users=sub_users).apply()
+            else:
+                sub = await cls.create(
+                    sub_id=sub_id, sub_type=sub_type, sub_users=sub_user
                 )
-                sub_user = sub_user if sub_user[-1] == "," else f"{sub_user},"
-                if query:
-                    if sub_user not in query.sub_users:
-                        sub_users = query.sub_users + sub_user
-                        await query.update(sub_users=sub_users).apply()
-                else:
-                    sub = await cls.create(
-                        sub_id=sub_id, sub_type=sub_type, sub_users=sub_user
-                    )
-                    await sub.update(
-                        live_short_id=live_short_id
-                        if live_short_id
-                        else sub.live_short_id,
-                        live_status=live_status if live_status else sub.live_status,
-                        dynamic_upload_time=dynamic_upload_time
-                        if dynamic_upload_time
-                        else sub.dynamic_upload_time,
-                        uid=uid if uid else sub.uid,
-                        uname=uname if uname else sub.uname,
-                        latest_video_created=latest_video_created
-                        if latest_video_created
-                        else sub.latest_video_created,
-                        season_update_time=season_update_time
-                        if season_update_time
-                        else sub.season_update_time,
-                        season_current_episode=season_current_episode
-                        if season_current_episode
-                        else sub.season_current_episode,
-                        season_id=season_id if season_id else sub.season_id,
-                        season_name=season_name if season_name else sub.season_name,
-                    ).apply()
-                return True
+                await sub.update(
+                    live_short_id=live_short_id
+                    if live_short_id
+                    else sub.live_short_id,
+                    live_status=live_status if live_status else sub.live_status,
+                    dynamic_upload_time=dynamic_upload_time
+                    if dynamic_upload_time
+                    else sub.dynamic_upload_time,
+                    uid=uid if uid else sub.uid,
+                    uname=uname if uname else sub.uname,
+                    latest_video_created=latest_video_created
+                    if latest_video_created
+                    else sub.latest_video_created,
+                    season_update_time=season_update_time
+                    if season_update_time
+                    else sub.season_update_time,
+                    season_current_episode=season_current_episode
+                    if season_current_episode
+                    else sub.season_current_episode,
+                    season_id=season_id if season_id else sub.season_id,
+                    season_name=season_name if season_name else sub.season_name,
+                ).apply()
+            return True
         except Exception as e:
             logger.info(f"bilibili_sub 添加订阅错误 {type(e)}: {e}")
         return False
@@ -110,9 +109,9 @@ class BilibiliSub(db.Model):
     @classmethod
     async def delete_bilibili_sub(cls, sub_id: int, sub_user: str) -> bool:
         """
-        说明：
+        说明:
             删除订阅
-        参数：
+        参数:
             :param sub_id: 订阅名称
             :param sub_user: 删除此条目的用户
         """
@@ -140,9 +139,9 @@ class BilibiliSub(db.Model):
     @classmethod
     async def get_sub(cls, sub_id: int) -> Optional["BilibiliSub"]:
         """
-        说明：
+        说明:
             获取订阅对象
-        参数：
+        参数:
             :param sub_id: 订阅 id
         """
         return await cls.query.where(cls.sub_id == sub_id).gino.first()
@@ -173,9 +172,9 @@ class BilibiliSub(db.Model):
         season_update_time: Optional[datetime] = None,
     ) -> bool:
         """
-        说明：
+        说明:
             更新订阅信息
-        参数：
+        参数:
             :param sub_id: 订阅名称，房间号，番剧号等
             :param live_short_id: 直接短 id
             :param live_status: 主播开播状态
@@ -232,7 +231,7 @@ class BilibiliSub(db.Model):
         cls,
     ) -> "List[BilibiliSub], List[BilibiliSub], List[BilibiliSub]":
         """
-        说明：
+        说明:
             分类获取所有数据
         """
         live_data = []

@@ -16,63 +16,77 @@ def init_plugins_settings(data_path: str):
     """
     plugins2settings_file = data_path / "configs" / "plugins2settings.yaml"
     plugins2settings_file.parent.mkdir(exist_ok=True, parents=True)
-    _matchers = get_matchers()
+    _matchers = get_matchers(True)
     _tmp_module = {}
     _tmp = []
     for x in plugins2settings_manager.keys():
         try:
             _plugin = nonebot.plugin.get_plugin(x)
             _module = _plugin.module
-            plugin_name = _module.__getattribute__("__zx_plugin_name__")
+            metadata = _plugin.metadata
+            plugin_name = (
+                metadata.name
+                if metadata
+                else _module.__getattribute__("__zx_plugin_name__")
+            )
             _tmp_module[x] = plugin_name
         except (KeyError, AttributeError) as e:
             logger.warning(f"配置文件 模块：{x} 获取 plugin_name 失败...{e}")
             _tmp_module[x] = ""
     for matcher in _matchers:
-        if matcher.plugin_name not in plugins2settings_manager.keys():
-            _plugin = nonebot.plugin.get_plugin(matcher.plugin_name)
-            try:
-                _module = _plugin.module
-            except AttributeError:
-                logger.warning(f"插件 {matcher.plugin_name} 加载失败...，插件控制未加载.")
-            else:
+        try:
+            if matcher.plugin_name not in plugins2settings_manager.keys():
+                _plugin = matcher.plugin
+                if not _plugin:
+                    continue
+                metadata = _plugin.metadata
                 try:
-                    plugin_name = _module.__getattribute__("__zx_plugin_name__")
-                    if "[admin]" in plugin_name.lower():
-                        try:
-                            admin_settings = _module.__getattribute__(
-                                "__plugin_settings__"
-                            )
-                            level = admin_settings["admin_level"]
-                            cmd = admin_settings.get("cmd")
-                        except (AttributeError, KeyError):
-                            level = 5
-                            cmd = None
-                        if level is None:
-                            level = 5
-                        admin_manager.add_admin_plugin_settings(
-                            matcher.plugin_name, cmd, level
-                        )
-                    if (
-                        "[hidden]" in plugin_name.lower()
-                        or "[admin]" in plugin_name.lower()
-                        or "[superuser]" in plugin_name.lower()
-                        or matcher.plugin_name in plugins2settings_manager.keys()
-                    ):
-                        continue
+                    _module = _plugin.module
                 except AttributeError:
-                    if matcher.plugin_name not in _tmp:
-                        logger.warning(
-                            f"获取插件 {matcher.plugin_name} __zx_plugin_name__ 失败...，插件控制未加载."
-                        )
+                    logger.warning(f"插件 {matcher.plugin_name} 加载失败...，插件控制未加载.")
                 else:
                     try:
+                        if metadata:
+                            plugin_name = metadata.name
+                        else:
+                            plugin_name = _module.__getattribute__("__zx_plugin_name__")
+                        if "[admin]" in plugin_name.lower():
+                            try:
+                                admin_settings = _module.__getattribute__(
+                                    "__plugin_settings__"
+                                )
+                                level = admin_settings["admin_level"]
+                                cmd = admin_settings.get("cmd")
+                            except (AttributeError, KeyError):
+                                level = 5
+                                cmd = None
+                            if level is None:
+                                level = 5
+                            admin_manager.add_admin_plugin_settings(
+                                matcher.plugin_name, cmd, level
+                            )
+                        if (
+                            "[hidden]" in plugin_name.lower()
+                            or "[admin]" in plugin_name.lower()
+                            or "[superuser]" in plugin_name.lower()
+                            or matcher.plugin_name in plugins2settings_manager.keys()
+                        ):
+                            continue
+                    except AttributeError:
+                        if matcher.plugin_name not in _tmp:
+                            logger.warning(
+                                f"获取插件 {matcher.plugin_name} __zx_plugin_name__ 失败...，插件控制未加载."
+                            )
+                    else:
                         _tmp_module[matcher.plugin_name] = plugin_name
-                        plugin_settings = _module.__getattribute__(
-                            "__plugin_settings__"
-                        )
-                        if plugin_settings.get('cost_gold') is None:
-                            plugin_settings['cost_gold'] = 0
+                        try:
+                            plugin_settings = _module.__getattribute__(
+                                "__plugin_settings__"
+                            )
+                        except AttributeError:
+                            plugin_settings = {"cmd": [matcher.plugin_name, plugin_name]}
+                        if not plugin_settings.get("cost_gold"):
+                            plugin_settings["cost_gold"] = 0
                         if (
                             plugin_settings.get("cmd") is not None
                             and plugin_name not in plugin_settings["cmd"]
@@ -90,9 +104,7 @@ def init_plugins_settings(data_path: str):
                             )
                         else:
                             try:
-                                plugin_type = _module.__getattribute__(
-                                    "__plugin_type__"
-                                )
+                                plugin_type = _module.__getattribute__("__plugin_type__")
                             except AttributeError:
                                 plugin_type = ("normal",)
                         if plugin_settings and matcher.plugin_name:
@@ -101,8 +113,8 @@ def init_plugins_settings(data_path: str):
                                 plugin_type=plugin_type,
                                 **plugin_settings,
                             )
-                    except AttributeError:
-                        pass
+        except Exception as e:
+            logger.error(f'{matcher.plugin_name} 初始化 plugin_settings 发生错误 {type(e)}：{e}')
         _tmp.append(matcher.plugin_name)
     _tmp_data = {"PluginSettings": plugins2settings_manager.get_data()}
     with open(plugins2settings_file, "w", encoding="utf8") as wf:

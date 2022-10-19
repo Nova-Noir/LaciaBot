@@ -18,7 +18,13 @@ usage：
     查看 pix 好康图库
     指令：
         pix ?*[tags]: 通过 tag 获取相似图片，不含tag时随机抽取
+        pid [uid]: 通过uid获取图片
         pix pid[pid]: 查看图库中指定pid图片
+        示例：pix 萝莉 白丝
+        示例：pix 萝莉 白丝 10  （10为数量）
+        示例：pix #02      （当tag只有1个tag且为数字时，使用#标记，否则将被判定为数量）
+        示例：pix 34582394     （查询指定uid图片）
+        示例：pix pid:12323423     （查询指定pid图片）
 """.strip()
 __plugin_superuser_usage__ = """
 usage：
@@ -49,7 +55,9 @@ __plugin_configs__ = {
         "value": None,
         "help": "单次发送的图片数量达到指定值时转发为合并消息",
         "default_value": None,
-    }
+    },
+    "ALLOW_GROUP_SETU": {"value": False, "help": "允许非超级用户使用-s参数", "default_value": False},
+    "ALLOW_GROUP_R18": {"value": False, "help": "允许非超级用户使用-r参数", "default_value": False},
 }
 
 
@@ -80,11 +88,17 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
         nsfw_tag = 2
     else:
         nsfw_tag = 0
-    if nsfw_tag != 0 and str(event.user_id) not in bot.config.superusers:
-        await pix.finish("你不能看这些噢，这些都是是留给管理员看的...")
-    if n := len(x) == 1 and is_number(x[0]):
-        num = int(x[-1])
-        keyword = ""
+    if str(event.user_id) not in bot.config.superusers:
+        if (nsfw_tag == 1 and not Config.get_config("pix", "ALLOW_GROUP_SETU")) or (
+            nsfw_tag == 2 and not Config.get_config("pix", "ALLOW_GROUP_R18")
+        ):
+            await pix.finish("你不能看这些噢，这些都是是留给管理员看的...")
+    if (n := len(x)) == 1:
+        if is_number(x[0]) and int(x[0]) < 100:
+            num = int(x[0])
+            keyword = ""
+        elif x[0].startswith("#"):
+            keyword = x[0][1:]
     elif n > 1:
         if is_number(x[-1]):
             num = int(x[-1])
@@ -118,6 +132,7 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
             all_image = await OmegaPixivIllusts.query_images(
                 pid=int(pid), nsfw_tag=nsfw_tag
             )
+        num = len(all_image)
     else:
         tmp = await Pixiv.query_images(
             x, r18=1 if nsfw_tag == 2 else 0, num=pix_num
@@ -134,8 +149,8 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     for _ in range(num):
         img_url = None
         author = None
-        # if not all_image:
-        #     await pix.finish("坏了...发完了，没图了...")
+        if not all_image:
+            await pix.finish("坏了...发完了，没图了...")
         img = random.choice(all_image)
         all_image.remove(img)
         if isinstance(img, OmegaPixivIllusts):

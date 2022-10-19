@@ -1,9 +1,9 @@
 from nonebot.matcher import Matcher
 from nonebot.message import run_preprocessor, run_postprocessor, IgnoredException
-from nonebot.adapters.onebot.v11.exception import ActionFailed
 from models.friend_user import FriendUser
 from models.group_member_info import GroupInfoUser
 from models.bag_user import BagUser
+from models.user_shop_gold_log import UserShopGoldLog
 from utils.manager import (
     plugins2settings_manager,
     admin_manager,
@@ -23,6 +23,7 @@ from nonebot.typing import T_State
 from typing import Optional
 from nonebot.adapters.onebot.v11 import (
     Bot,
+    ActionFailed,
     MessageEvent,
     GroupMessageEvent,
     PokeNotifyEvent,
@@ -59,6 +60,7 @@ async def _(matcher: Matcher, bot: Bot, event: Event, state: T_State):
         if await BagUser.get_gold(event.user_id, event.group_id) < cost_gold:
             await send_msg(f"金币不足..该功能需要{cost_gold}金币..", bot, event)
             raise IgnoredException(f"{module} 金币限制...")
+        await UserShopGoldLog.add_shop_log(event.user_id, event.group_id, 2, matcher.plugin_name, cost_gold, 1)
         # 当插件不阻塞超级用户时，超级用户提前扣除金币
         if (
             str(event.user_id) in bot.config.superusers
@@ -91,7 +93,10 @@ async def _(matcher: Matcher, bot: Bot, event: Event, state: T_State):
     except AttributeError:
         pass
     # 群黑名单检测 群总开关检测
-    if isinstance(event, GroupMessageEvent) or matcher.plugin_name == other_limit_plugins:
+    if (
+        isinstance(event, GroupMessageEvent)
+        or matcher.plugin_name in other_limit_plugins
+    ):
         try:
             if (
                 group_manager.get_group_level(event.group_id) < 0
@@ -106,7 +111,7 @@ async def _(matcher: Matcher, bot: Bot, event: Event, state: T_State):
                     raise IgnoredException("功能总开关关闭状态")
         except AttributeError:
             pass
-    if module in admin_manager.keys() and matcher.priority not in [1, 9]:
+    if module in admin_manager.keys() and matcher.priority not in [1, 999]:
         if isinstance(event, GroupMessageEvent):
             # 个人权限
             if (
@@ -146,9 +151,13 @@ async def _(matcher: Matcher, bot: Bot, event: Event, state: T_State):
                 if event.is_tome():
                     status_message_manager.add(event.user_id)
                 raise IgnoredException("权限不足")
-    if module in plugins2info_dict.keys() and matcher.priority not in [1, 9]:
+    if module in plugins2info_dict.keys() and matcher.priority not in [1, 999]:
         # 戳一戳单独判断
-        if isinstance(event, GroupMessageEvent) or isinstance(event, PokeNotifyEvent) or matcher.plugin_name in other_limit_plugins:
+        if (
+            isinstance(event, GroupMessageEvent)
+            or isinstance(event, PokeNotifyEvent)
+            or matcher.plugin_name in other_limit_plugins
+        ):
             if status_message_manager.get(event.group_id) is None:
                 status_message_manager.delete(event.group_id)
             if plugins2info_dict[module]["level"] > group_manager.get_group_level(

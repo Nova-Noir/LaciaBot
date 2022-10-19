@@ -2,6 +2,7 @@ from services.db_context import db
 from typing import Dict
 from typing import Optional, List
 from services.log import logger
+from .goods_info import GoodsInfo
 
 
 class BagUser(db.Model):
@@ -22,9 +23,9 @@ class BagUser(db.Model):
     @classmethod
     async def get_user_total_gold(cls, user_qq: int, group_id: int) -> str:
         """
-        说明：
+        说明:
             获取金币概况
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 所在群号
         """
@@ -44,9 +45,9 @@ class BagUser(db.Model):
     @classmethod
     async def get_gold(cls, user_qq: int, group_id: int) -> int:
         """
-        说明：
+        说明:
             获取当前金币
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 所在群号
         """
@@ -62,17 +63,24 @@ class BagUser(db.Model):
             return 100
 
     @classmethod
-    async def get_property(cls, user_qq: int, group_id: int) -> Dict[str, int]:
+    async def get_property(cls, user_qq: int, group_id: int, only_active: bool = False) -> Dict[str, int]:
         """
-        说明：
+        说明:
             获取当前道具
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 所在群号
+            :param only_active: 仅仅获取主动使用的道具
         """
         query = cls.query.where((cls.user_qq == user_qq) & (cls.group_id == group_id))
         user = await query.gino.first()
         if user:
+            if only_active and user.property:
+                data = {}
+                name_list = [x.goods_name for x in await GoodsInfo.get_all_goods() if not x.is_passive]
+                for key in [x for x in user.property.keys() if x in name_list]:
+                    data[key] = user.property[key]
+                return data
             return user.property
         else:
             await cls.create(
@@ -84,9 +92,9 @@ class BagUser(db.Model):
     @classmethod
     async def add_gold(cls, user_qq: int, group_id: int, num: int):
         """
-        说明：
+        说明:
             增加金币
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 所在群号
             :param num: 金币数量
@@ -112,9 +120,9 @@ class BagUser(db.Model):
     @classmethod
     async def spend_gold(cls, user_qq: int, group_id: int, num: int):
         """
-        说明：
+        说明:
             花费金币
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 所在群号
             :param num: 金币数量
@@ -140,9 +148,9 @@ class BagUser(db.Model):
     @classmethod
     async def add_property(cls, user_qq: int, group_id: int, name: str):
         """
-        说明：
+        说明:
             增加道具
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 所在群号
             :param name: 道具名称
@@ -165,9 +173,9 @@ class BagUser(db.Model):
         cls, user_qq: int, group_id: int, name: str, num: int = 1
     ) -> bool:
         """
-        说明：
+        说明:
             使用/删除 道具
-        参数：
+        参数:
             :param user_qq: qq号
             :param group_id: 所在群号
             :param name: 道具名称
@@ -192,9 +200,9 @@ class BagUser(db.Model):
         cls, user_qq: int, group_id: int, goods: "GoodsInfo", goods_num: int
     ) -> bool:
         """
-        说明：
+        说明:
             购买道具
-        参数：
+        参数:
             :param user_qq: 用户qq
             :param group_id: 所在群聊
             :param goods: 商品
@@ -209,14 +217,14 @@ class BagUser(db.Model):
             return True
         except Exception as e:
             logger.error(f"buy_property 发生错误 {type(e)}：{e}")
-            return False
+        return False
 
     @classmethod
     async def get_all_users(cls, group_id: Optional[int] = None) -> List["BagUser"]:
         """
-        说明：
+        说明:
             获取所有用户数据
-        参数：
+        参数:
             :param group_id: 群号
         """
         if not group_id:
