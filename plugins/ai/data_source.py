@@ -43,7 +43,7 @@ async def get_chat_result(text: str, img_url: str, user_id: int, nickname: str) 
     if len(text) < 6 and random.random() < 0.6:
         keys = anime_data.keys()
         for key in keys:
-            if text.find(key) != -1:
+            if key in text:
                 return random.choice(anime_data[key]).replace("你", nickname)
     rst = await tu_ling(text, img_url, user_id)
     if not rst:
@@ -51,12 +51,10 @@ async def get_chat_result(text: str, img_url: str, user_id: int, nickname: str) 
     if not rst:
         return no_result()
     if nickname:
-        if len(nickname) < 5:
-            if random.random() < 0.5:
-                nickname = "~".join(nickname) + "~"
-                if random.random() < 0.2:
-                    if nickname.find("大人") == -1:
-                        nickname += "大~人~"
+        if len(nickname) < 5 and random.random() < 0.5:
+            nickname = "~".join(nickname) + "~"
+            if random.random() < 0.2 and "大人" not in nickname:
+                nickname += "大~人~"
         rst = str(rst).replace("小主人", nickname).replace("小朋友", nickname)
     ai_message_manager.add_result(user_id, rst)
     return rst
@@ -106,7 +104,7 @@ async def tu_ling(text: str, img_url: str, user_id: int) -> str:
     if response.status_code != 200:
         return no_result()
     resp_payload = json.loads(response.text)
-    if int(resp_payload["intent"]["code"]) in [4003]:
+    if int(resp_payload["intent"]["code"]) in {4003}:
         return ""
     if resp_payload["results"]:
         for result in resp_payload["results"]:
@@ -142,15 +140,11 @@ async def xie_ai(text: str) -> str:
                 content = content[: content.find("提示")]
             if "淘宝" in content or "taobao.com" in content:
                 return ""
-            while True:
-                r = re.search("{face:(.*)}", content)
-                if r:
-                    id_ = r.group(1)
-                    content = content.replace(
-                        "{" + f"face:{id_}" + "}", str(face(int(id_)))
-                    )
-                else:
-                    break
+            while r := re.search("{face:(.*)}", content):
+                id_ = r[1]
+                content = content.replace(
+                    "{" + f"face:{id_}" + "}", str(face(int(id_)))
+                )
         return (
             content
             if not content and not Config.get_config("ai", "ALAPI_AI_CHECK")
@@ -165,7 +159,12 @@ def hello() -> str:
     """
     一些打招呼的内容
     """
-    result = random.choice(
+    # img = random.choice(os.listdir(IMAGE_PATH / "zai"))
+    # if img[-4:] == ".gif":
+    #     result += image(img, "zai")
+    # else:
+    #     result += image(img, "zai")
+    return random.choice(
         (
             "哦豁？！",
             "你好！Ov<",
@@ -174,12 +173,6 @@ def hello() -> str:
             "呼呼，叫俺干嘛",
         )
     )
-    # img = random.choice(os.listdir(IMAGE_PATH / "zai"))
-    # if img[-4:] == ".gif":
-    #     result += image(img, "zai")
-    # else:
-    #     result += image(img, "zai")
-    return result
 
 
 # 没有回答时回复内容
@@ -211,9 +204,8 @@ async def check_text(text: str) -> str:
     params = {"token": Config.get_config("alapi", "ALAPI_TOKEN"), "text": text}
     try:
         data = (await AsyncHttpx.get(check_url, timeout=2, params=params)).json()
-        if data["code"] == 200:
-            if data["data"]["conclusion_type"] == 2:
-                return ""
+        if data["code"] == 200 and data["data"]["conclusion_type"] == 2:
+            return ""
     except Exception as e:
         logger.error(f"检测违规文本错误...{type(e)}：{e}")
     return text
