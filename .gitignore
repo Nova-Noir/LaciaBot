@@ -155,9 +155,8 @@ data/
 .env
 .env.dev
 resources/
-!/configs/config.py
-!/configs/config.yaml
-!/.env
-!/.env.dev
+configs/config.py
+configs/config.yaml
 !/plugins/csgo_server/
 !/plugins/activity/
+restart.sh
