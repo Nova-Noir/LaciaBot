@@ -93,6 +93,8 @@ class SignGroupUser(db.Model):
         else:
             query = cls.query
         for user in await query.gino.all():
+            if str(user.user_qq) == '4050909':
+                continue
             impression_list.append(user.impression)
             user_qq_list.append(user.user_qq)
             user_group.append(user.group_id)
