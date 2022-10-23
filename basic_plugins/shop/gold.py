@@ -1,3 +1,4 @@
+from configs.config import HIDDEN_USER
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, ActionFailed
 from nonebot.params import CommandArg
@@ -50,8 +51,12 @@ async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
     else:
         num = 10
     all_users = await BagUser.get_all_users(event.group_id)
-    all_user_id = [user.user_qq for user in all_users if str(user.user_qq) != '4050909']
-    all_user_data = [user.gold for user in all_users if str(user.user_qq) != '4050909']
+    all_user_id = [user.user_qq for user in all_users]
+    all_user_data = [user.gold for user in all_users]
+    for user_qq in HIDDEN_USER:
+        idx = all_user_id.index(user_qq)
+        all_user_id.pop(idx)
+        all_user_data.pop(idx)
     rank_image = await init_rank("金币排行", all_user_id, all_user_data, event.group_id, num)
     if rank_image:
         await gold_rank.finish(image(b64=rank_image.pic2bs4()))

@@ -8,7 +8,7 @@ if platform.system() == "Linux":
     hostip = os.popen("cat /etc/resolv.conf | grep nameserver | awk '{ print $2 }'").read().replace("\n","")
 
 # 回复消息名称
-NICKNAME: str = "小真寻"
+NICKNAME: str = "蕾西亚"
 
 # 数据库（必要）
 # 如果填写了bind就不需要再填写后面的字段了#）
@@ -24,6 +24,9 @@ database: str = ""  # 数据库名称
 # 代理，例如 "http://127.0.0.1:7890"
 # 如果是WLS 可以 f"http://{hostip}:7890" 使用寄主机的代理
 SYSTEM_PROXY: Optional[str] = None  # 全局代理
+
+# 隐藏数据的 ID
+HIDDEN_USER: list[int] = []
 
 
 Config = ConfigsManager(Path() / "data" / "configs" / "plugins2config.yaml")

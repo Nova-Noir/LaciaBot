@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from models.sign_group_user import SignGroupUser
 from models.group_member_info import GroupInfoUser
 from models.bag_user import BagUser
-from configs.config import NICKNAME
+from configs.config import NICKNAME, HIDDEN_USER
 from nonebot.adapters.onebot.v11 import MessageSegment
 from utils.image_utils import BuildImage, BuildMat
 from services.db_context import db
@@ -102,6 +102,10 @@ async def group_user_check(nickname: str, user_qq: int, group: int) -> MessageSe
 
 async def group_impression_rank(group: int, num: int) -> Optional[BuildMat]:
     user_qq_list, impression_list, _ = await SignGroupUser.get_all_impression(group)
+    for user_qq in HIDDEN_USER:
+        idx = user_qq_list.index(user_qq)
+        user_qq_list.pop(idx)
+        impression_list.pop(idx)
     return await init_rank("好感度排行榜", user_qq_list, impression_list, group, num)
 
 

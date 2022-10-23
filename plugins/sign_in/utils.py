@@ -124,8 +124,8 @@ def _generate_card(
         user.impression
     )
     interpolation = next_impression - user.impression
-    if level == "9":
-        level = "8"
+    if level == "10":
+        level = "9"
         interpolation = 0
     info_img.text((0, 0), f"· 好感度等级：{level} [{lik2relation[level]}]")
     info_img.text((0, 20), f"· {NICKNAME}对你的态度：{level2attitude[level]}")
@@ -192,17 +192,17 @@ def _generate_card(
         font_size=30,
         font_color=(255, 255, 255),
     )
-    sign_day_img = BuildImage(
-        0,
-        0,
-        plain_text=f"{user.checkin_count}",
-        color=(255, 255, 255, 0),
-        font_size=40,
-        font_color=(211, 64, 33),
-    )
-    lik_text1_img = BuildImage(
-        0, 0, plain_text="当前", color=(255, 255, 255, 0), font_size=20
-    )
+    # sign_day_img = BuildImage(
+    #     0,
+    #     0,
+    #     plain_text=f"{user.checkin_count}",
+    #     color=(255, 255, 255, 0),
+    #     font_size=40,
+    #     font_color=(211, 64, 33),
+    # )
+    # lik_text1_img = BuildImage(
+    #     0, 0, plain_text="当前", color=(255, 255, 255, 0), font_size=20
+    # )
     lik_text2_img = BuildImage(
         0,
         0,
@@ -210,14 +210,14 @@ def _generate_card(
         color=(255, 255, 255, 0),
         font_size=30,
     )
-    watermark = BuildImage(
-        0,
-        0,
-        plain_text=f"{NICKNAME}@{datetime.now().year}",
-        color=(255, 255, 255, 0),
-        font_size=15,
-        font_color=(155, 155, 155),
-    )
+    # watermark = BuildImage(
+    #     0,
+    #     0,
+    #     plain_text=f"{NICKNAME}@{datetime.now().year}",
+    #     color=(255, 255, 255, 0),
+    #     font_size=15,
+    #     font_color=(155, 155, 155),
+    # )
     today_data = BuildImage(300, 300, color=(255, 255, 255, 0), font_size=20)
     if is_card_view:
         today_sign_text_img = BuildImage(
@@ -272,18 +272,18 @@ def _generate_card(
     bk.paste(nickname_img, (30, 15), True)
     bk.paste(uid_img, (30, 85), True)
     bk.paste(A, (0, 150), alpha=True)
-    bk.text((30, 167), "Accumulative check-in for")
-    _x = bk.getsize("Accumulative check-in for")[0] + sign_day_img.w + 45
-    bk.paste(sign_day_img, (346, 158), True)
-    bk.text((_x, 167), "days")
+    # bk.text((30, 167), "Accumulative check-in for")
+    # _x = bk.getsize("Accumulative check-in for")[0] + sign_day_img.w + 45
+    # bk.paste(sign_day_img, (346, 158), True)
+    # bk.text((_x, 167), "days")
     bk.paste(data_img, (220, 370), True)
-    bk.paste(lik_text1_img, (220, 240), True)
+    # bk.paste(lik_text1_img, (220, 240), True)
     bk.paste(lik_text2_img, (262, 234), True)
     bk.paste(bar_bk, (225, 275), True)
     bk.paste(info_img, (220, 305), True)
     bk.paste(today_sign_text_img, (550, 180), True)
     bk.paste(today_data, (580, 220), True)
-    bk.paste(watermark, (15, 400), True)
+    # bk.paste(watermark, (15, 400), True)
     bk.save(SIGN_TODAY_CARD_PATH / f"{user_id}_{user.group_id}_{_type}_{data}.png")
     return image(f"{user_id}_{user.group_id}_{_type}_{data}.png", "sign/today_card")
 
