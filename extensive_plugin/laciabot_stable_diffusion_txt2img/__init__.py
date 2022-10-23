@@ -1,6 +1,7 @@
 import asyncio.exceptions
-from typing import Union
 
+from aiohttp.client_exceptions import ServerDisconnectedError
+from typing import Union
 from nonebot import on_shell_command
 from nonebot.params import ShellCommandArgs, T_State
 from nonebot.rule import Namespace, ParserExit
@@ -48,7 +49,7 @@ __plugin_cd_limit__ = {
     "check_type": "all",  # 'private'/'group'/'all'，限制私聊/群聊/全部
     "limit_type": "user",  # 监听对象，以user_id或group_id作为键来限制，'user'：用户id，'group'：群id
     "rst": f"{NICKNAME} 也需要休息呢，等等再来吧",  # 回复的话，为None时不回复，可以添加[at]，[uname]，[nickname]来对应艾特，用户群名称，昵称系统昵称
-    "status": True  # 此限制的开关状态
+    "status": False  # 此限制的开关状态
 }
 
 __plugin_block_limit__ = {"rst": f"{NICKNAME} 正在处理图片，别急..."}
@@ -124,6 +125,8 @@ async def _(event: MessageEvent, state: T_State):
         except asyncio.exceptions.TimeoutError:
             await ai_drawing.finish(MessageSegment.reply(
                 event.user_id) + f"{NICKNAME} 没有把图画出来呢...可能是线程堵塞了。\n可以尝试重新生成或者减小参数再试试哦")
+        except ServerDisconnectedError:
+            await ai_drawing.finish(MessageSegment.reply(event.user_id) + "www 好像 API 炸了，快私聊主人让他开电脑叭")
         except Exception as e:
             await ai_drawing.finish(MessageSegment.reply(event.user_id) + f"{type(e)} {e}")
         else:
