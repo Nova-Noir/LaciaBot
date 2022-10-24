@@ -16,7 +16,7 @@ async def check(event: MessageEvent, state: T_State) -> bool:
     img = get_message_img(event.message)
     at = get_message_at(event.message)
     problem = text
-    if not text and len(img) == 1:
+    if not problem and len(img) == 1:
         try:
             r = await AsyncHttpx.get(img[0])
             problem = str(imagehash.average_hash(Image.open(BytesIO(r.content))))

@@ -51,7 +51,7 @@ class AsyncHttpx:
         """
         if not headers:
             headers = get_user_agent()
-        proxy = proxy if proxy else cls.proxy if use_proxy else None
+        proxy = proxy or (cls.proxy if use_proxy else None)
         async with httpx.AsyncClient(proxies=proxy, verify=verify) as client:
             return await client.get(
                 url,
@@ -98,7 +98,7 @@ class AsyncHttpx:
         """
         if not headers:
             headers = get_user_agent()
-        proxy = proxy if proxy else cls.proxy if use_proxy else None
+        proxy = proxy or (cls.proxy if use_proxy else None)
         async with httpx.AsyncClient(proxies=proxy, verify=verify) as client:
             return await client.post(
                 url,
@@ -172,7 +172,7 @@ class AsyncHttpx:
                 else:
                     if not headers:
                         headers = get_user_agent()
-                    proxy = proxy if proxy else cls.proxy if use_proxy else None
+                    proxy = proxy or (cls.proxy if use_proxy else None)
                     try:
                         async with httpx.AsyncClient(proxies=proxy, verify=verify) as client:
                             async with client.stream(
@@ -203,8 +203,7 @@ class AsyncHttpx:
                         return True
                     except (TimeoutError, ConnectTimeout):
                         pass
-            else:
-                logger.error(f"下载 {url} 下载超时.. Path：{path.absolute()}")
+            logger.error(f"下载 {url} 下载超时.. Path：{path.absolute()}")
         except Exception as e:
             logger.error(f"下载 {url} 未知错误 {type(e)}：{e}.. Path：{path.absolute()}")
         return False
@@ -262,22 +261,23 @@ class AsyncHttpx:
         tasks = []
         result_ = []
         for x, y in zip(_split_url_list, _split_path_list):
-            for url, path in zip(x, y):
-                tasks.append(
-                    asyncio.create_task(
-                        cls.download_file(
-                            url,
-                            path,
-                            params=params,
-                            headers=headers,
-                            cookies=cookies,
-                            use_proxy=use_proxy,
-                            timeout=timeout,
-                            proxy=proxy,
-                            ** kwargs,
-                        )
+            tasks.extend(
+                asyncio.create_task(
+                    cls.download_file(
+                        url,
+                        path,
+                        params=params,
+                        headers=headers,
+                        cookies=cookies,
+                        use_proxy=use_proxy,
+                        timeout=timeout,
+                        proxy=proxy,
+                        **kwargs,
                     )
                 )
+                for url, path in zip(x, y)
+            )
+
             _x = await asyncio.gather(*tasks)
             result_ = result_ + list(_x)
             tasks.clear()
