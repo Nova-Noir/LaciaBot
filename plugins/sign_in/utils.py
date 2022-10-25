@@ -59,40 +59,39 @@ async def get_card(
     )
     if card_file.exists():
         return image(f"{user_id}_{user.group_id}_{_type}_{date}.png", "sign/today_card")
-    else:
-        if add_impression == -1:
-            card_file = (
-                Path(SIGN_TODAY_CARD_PATH)
-                / f"{user_id}_{user.group_id}_view_{date}.png"
-            )
-            if card_file.exists():
-                return image(
-                    f"{user_id}_{user.group_id}_view_{date}.png",
-                    "sign/today_card",
-                )
-            is_card_view = True
-        ava = BytesIO(await get_user_avatar(user_id))
-        uid = await GroupInfoUser.get_group_member_uid(user.user_qq, user.group_id)
-        impression_list = None
-        if is_card_view:
-            _, impression_list, _ = await SignGroupUser.get_all_impression(
-                user.group_id
-            )
-        return await asyncio.get_event_loop().run_in_executor(
-            None,
-            _generate_card,
-            user,
-            nickname,
-            user_id,
-            add_impression,
-            gold,
-            gift,
-            uid,
-            ava,
-            impression_list,
-            is_double,
-            is_card_view,
+    if add_impression == -1:
+        card_file = (
+            Path(SIGN_TODAY_CARD_PATH)
+            / f"{user_id}_{user.group_id}_view_{date}.png"
         )
+        if card_file.exists():
+            return image(
+                f"{user_id}_{user.group_id}_view_{date}.png",
+                "sign/today_card",
+            )
+        is_card_view = True
+    ava = BytesIO(await get_user_avatar(user_id))
+    uid = await GroupInfoUser.get_group_member_uid(user.user_qq, user.group_id)
+    impression_list = None
+    if is_card_view:
+        _, impression_list, _ = await SignGroupUser.get_all_impression(
+            user.group_id
+        )
+    return await asyncio.get_event_loop().run_in_executor(
+        None,
+        _generate_card,
+        user,
+        nickname,
+        user_id,
+        add_impression,
+        gold,
+        gift,
+        uid,
+        ava,
+        impression_list,
+        is_double,
+        is_card_view,
+    )
 
 
 def _generate_card(
@@ -147,9 +146,7 @@ def _generate_card(
         ),
         True,
     )
-    font_size = 30
-    if "好感度双倍加持卡" in gift:
-        font_size = 20
+    font_size = 20 if "好感度双倍加持卡" in gift else 30
     gift_border = BuildImage(
         270,
         100,
@@ -181,7 +178,7 @@ def _generate_card(
     )
     if uid:
         uid = f"{uid}".rjust(12, "0")
-        uid = uid[:4] + " " + uid[4:8] + " " + uid[8:]
+        uid = f"{uid[:4]} {uid[4:8]} {uid[8:]}"
     else:
         uid = "XXXX XXXX XXXX"
     uid_img = BuildImage(
@@ -306,11 +303,11 @@ def generate_progress_bar_pic():
     step_g = (bg_2[1] - bg_1[1]) / width
     step_b = (bg_2[2] - bg_1[2]) / width
 
-    for y in range(0, width):
+    for y in range(width):
         bg_r = round(bg_1[0] + step_r * y)
         bg_g = round(bg_1[1] + step_g * y)
         bg_b = round(bg_1[2] + step_b * y)
-        for x in range(0, height):
+        for x in range(height):
             A.point((y, x), fill=(bg_r, bg_g, bg_b))
     bk.paste(img_y, (0, 0), True)
     bk.paste(A, (25, 0))
@@ -335,10 +332,14 @@ def get_level_and_next_impression(impression: float):
     if impression == 0:
         return lik2level[10], 10, 0
     keys = list(lik2level.keys())
-    for i in range(len(keys)):
-        if impression > keys[i]:
-            return lik2level[keys[i]], keys[i - 1], keys[i]
-    return lik2level[10], 10, 0
+    return next(
+        (
+            (lik2level[keys[i]], keys[i - 1], keys[i])
+            for i in range(len(keys))
+            if impression > keys[i]
+        ),
+        (lik2level[10], 10, 0),
+    )
 
 
 def clear_sign_data_pic():
