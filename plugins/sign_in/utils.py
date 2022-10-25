@@ -278,7 +278,7 @@ def _generate_card(
     # bk.text((_x, 167), "days")
     bk.paste(data_img, (220, 370), True)
     # bk.paste(lik_text1_img, (220, 240), True)
-    bk.paste(lik_text2_img, (262, 234), True)
+    bk.paste(lik_text2_img, (220, 234), True)
     bk.paste(bar_bk, (225, 275), True)
     bk.paste(info_img, (220, 305), True)
     bk.paste(today_sign_text_img, (550, 180), True)
