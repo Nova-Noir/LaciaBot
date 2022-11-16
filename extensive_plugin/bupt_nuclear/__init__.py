@@ -5,6 +5,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment
 from configs.config import NICKNAME
 
 from .data_source import get_nuclear_people_number
+from .img_builder import generate_card
 
 __zx_plugin_name__ = "核酸点位查询"
 __plugin_usage__ = """
@@ -40,14 +41,5 @@ bupt_nuclear = on_command("nuclear", aliases={"核酸", "核"}, rule=to_me, prio
 
 @bupt_nuclear.handle()
 async def _():
-    result = await get_nuclear_people_number()
-    msg = MessageSegment.text(f"更新时间：{result.time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-    for resp in result.nuclear_list:
-        if resp.count in range(0, 50):
-            rt = "稳"
-        elif resp.count in range(50, 100):
-            rt = "急"
-        else:
-            rt = "寄"
-        msg += f"{resp.locate}: {rt} | 预估人数: {resp.count}\n"
-    await bupt_nuclear.finish(msg)
+    msg = await generate_card(await get_nuclear_people_number())
+    await bupt_nuclear.finish(MessageSegment.image(f"base64://{msg}"))
