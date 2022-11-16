@@ -6,11 +6,8 @@ from configs.path_config import IMAGE_PATH
 
 from .data_source import BUPT_Nuclear_List_Model
 
-
-SIGN_RESOURCE_PATH = IMAGE_PATH / 'sign' / 'sign_res'
-SIGN_TODAY_CARD_PATH = IMAGE_PATH / 'sign' / 'today_card'
-SIGN_BORDER_PATH = SIGN_RESOURCE_PATH / 'border'
-SIGN_BACKGROUND_PATH = SIGN_RESOURCE_PATH / 'background'
+font = "SmileySans-Oblique.otf" # Download this font in 'https://github.com/atelier-anchor/smiley-sans/releases'
+                                # or replace it with an existing one.
 
 async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
     bk = BuildImage(
@@ -28,10 +25,10 @@ async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
         140,
         color=(233, 233, 233, 0),
         font_size=20,
-        font="CJGaoDeGuo.otf"
+        font=font
     )
     await time_text.atext((0, 0), f"更新时间：{resp.time.strftime('%Y-%m-%d %H:%M:%S')}", fill=(123, 123, 123))
-    await bk.apaste(time_text, (350, 95), True)
+    await bk.apaste(time_text, (400, 95), True)
 
     data_back_mask = BuildImage(
         666,
@@ -58,21 +55,21 @@ async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
         await data_back.acircle_corner(10)
         await data_back.apaste(data_back_mask, (5, 5), True)
         status_text = BuildImage(
-            150,
-            150,
+            120,
+            120,
             color=(255, 255, 255, 0),
             font_size=80,
-            font="CJGaoDeGuo.otf"
+            font=font
         )
-        await status_text.atext((45, 45), rt, rt_color)
-        await data_back.apaste(status_text, (0, 0), True)
+        await status_text.atext((0, 0), rt, rt_color, center_type="center")
+        await data_back.apaste(status_text, (20, 10), True)
 
         locate_text = BuildImage(
             496,
             80,
             color=(255, 255, 255, 0),
             font_size=25,
-            font="CJGaoDeGuo.otf"
+            font=font
         )
         await locate_text.atext((0, 0), data.locate, fill=(123, 123, 123), center_type='by_width')
         await data_back.apaste(locate_text, (125, 20), True)
@@ -82,20 +79,20 @@ async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
             80,
             color=(255, 255, 255, 0),
             font_size=25,
-            font="CJGaoDeGuo.otf"
+            font=font
         )
         await waiting_people_text.atext((0, 0), "当前预估人数：", fill=rt_color, center_type='by_width')
-        await data_back.apaste(waiting_people_text, (180, 80), True)
+        await data_back.apaste(waiting_people_text, (180, 90), True)
 
         number_text = BuildImage(
-            150,
-            150,
+            120,
+            120,
             color=(255, 255, 255, 0),
             font_size=80,
-            font="CJGaoDeGuo.otf"
+            font=font
         )
-        await number_text.atext((45, 45), str(data.count), rt_color, center_type='by_width')
-        await data_back.apaste(number_text, (500, 0), True)
+        await number_text.atext((0, 0), str(data.count), rt_color, center_type='center')
+        await data_back.apaste(number_text, (520, 10), True)
 
         await bk.apaste(data_back, (0, 120 + 155*i), True)
     return bk.pic2bs4()

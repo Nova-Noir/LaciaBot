@@ -17,8 +17,8 @@ locale_to_readable = {
     "KehuiOutside": "本部-科学会堂-西北室外",
     "SH-TSG-Street": "沙河-图书馆内街",
     "SH-XhS": "沙河-学活南侧",
-    "SH-JxlW": "沙河-教学楼西北角(待较正)",
-    "SH-JZG": "沙河-甲子钟(待较正)"
+    "SH-JxlW": "沙河-教学楼西北角(待校正)",
+    "SH-JZG": "沙河-甲子钟(待校正)"
 }
 
 url = "https://youth.bupt.edu.cn/nuclear/api/get?"
