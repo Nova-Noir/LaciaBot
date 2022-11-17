@@ -41,5 +41,9 @@ bupt_nuclear = on_command("nuclear", aliases={"核酸", "核"}, rule=to_me(), pr
 
 @bupt_nuclear.handle()
 async def _():
-    msg = await generate_card(await get_nuclear_people_number())
-    await bupt_nuclear.finish(MessageSegment.image(f"base64://{msg}"))
+    try:
+        msg = await generate_card(await get_nuclear_people_number())
+    except ConnectionError as e:
+        await bupt_nuclear.finish(f"出错了...\n{e}")
+    else:
+        await bupt_nuclear.finish(MessageSegment.image(f"base64://{msg}"))
