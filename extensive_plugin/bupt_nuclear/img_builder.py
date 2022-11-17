@@ -1,18 +1,19 @@
 import random
+from typing import List
 from PIL import Image
 from pathlib import Path
 from utils.image_utils import BuildImage
 from configs.path_config import IMAGE_PATH
 
-from .data_source import BUPT_Nuclear_List_Model
+from .data_source import BUPT_Nuclear_Model
 
 font = "SmileySans-Oblique.otf" # Download this font in 'https://github.com/atelier-anchor/smiley-sans/releases'
                                 # or replace it with an existing one.
 
-async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
+async def generate_card(nuclear_list: List[BUPT_Nuclear_Model]) -> str:
     bk = BuildImage(
         676,
-        115 + len(resp.nuclear_list)*155,
+        115 + len(nuclear_list)*155,
         color=(210, 210, 210, 200),
         font_size=25
     )
@@ -20,29 +21,19 @@ async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
     nuclear_img = Image.open(Path(__file__).parent / 'bupt_nuclear.png').resize((620,80))
     await bk.apaste(nuclear_img, (30,20), True)
 
-    time_text = BuildImage(
-        666,
-        140,
-        color=(233, 233, 233, 0),
-        font_size=20,
-        font=font
-    )
-    await time_text.atext((0, 0), f"更新时间：{resp.time.strftime('%Y-%m-%d %H:%M:%S')}", fill=(123, 123, 123))
-    await bk.apaste(time_text, (400, 95), True)
-
     data_back_mask = BuildImage(
         666,
         140,
         color=(233, 233, 233, 220)
     )
     await data_back_mask.acircle_corner(10)
-    for i in range(len(resp.nuclear_list)):
-        data = resp.nuclear_list[i]
+    for i in range(len(nuclear_list)):
+        data = nuclear_list[i]
         if data.count in range(0, 40):
                 rt = "稳"
                 rt_color = (34, 166, 105)
         elif data.count in range(40, 100):
-                rt = "急"
+                rt = "危"
                 rt_color = (209, 164, 31)
         else:
                 rt = "寄"
@@ -72,7 +63,7 @@ async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
             font=font
         )
         await locate_text.atext((0, 0), data.locate, fill=(123, 123, 123), center_type='by_width')
-        await data_back.apaste(locate_text, (125, 20), True)
+        await data_back.apaste(locate_text, (125, 15), True)
 
         waiting_people_text = BuildImage(
             496,
@@ -93,6 +84,16 @@ async def generate_card(resp: BUPT_Nuclear_List_Model) -> str:
         )
         await number_text.atext((0, 0), str(data.count), rt_color, center_type='center')
         await data_back.apaste(number_text, (520, 10), True)
+
+        time_text = BuildImage(
+            496,
+            80,
+            color=(233, 233, 233, 0),
+            font_size=18,
+            font=font
+        )
+        await time_text.atext((0, 0), f"更新时间：{data.time.strftime('%Y-%m-%d %H:%M:%S')}", fill=(123, 123, 123), center_type="by_width")
+        await data_back.apaste(time_text, (125, 120), True)
 
         await bk.apaste(data_back, (0, 120 + 155*i), True)
     return bk.pic2bs4()

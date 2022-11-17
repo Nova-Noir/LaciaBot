@@ -36,7 +36,7 @@ __plugin_cd_limit__ = {
 
 __plugin_block_limit__ = {"rst": f"{NICKNAME} 正在实地考察核酸人数，再等等..."}
 
-bupt_nuclear = on_command("nuclear", aliases={"核酸", "核"}, rule=to_me, priority=2, block=True)
+bupt_nuclear = on_command("nuclear", aliases={"核酸", "核"}, rule=to_me(), priority=2, block=True)
 
 
 @bupt_nuclear.handle()
