@@ -1,10 +1,15 @@
-from nonebot import on_command
+import base64
+import json
+from nonebot import on_command, get_app
 from nonebot.rule import to_me
 from nonebot.adapters.onebot.v11 import MessageSegment
+from fastapi import FastAPI
+from fastapi.responses import Response, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from configs.config import NICKNAME
 
-from .data_source import get_nuclear_people_number
+from .data_source import get_nuclear_people_number, BUPT_Nuclear_Model
 from .img_builder import generate_card
 
 __zx_plugin_name__ = "核酸点位查询"
@@ -47,3 +52,34 @@ async def _():
         await bupt_nuclear.finish(f"出错了...\n{e}")
     else:
         await bupt_nuclear.finish(MessageSegment.image(f"base64://{msg}"))
+
+# Web API
+app: FastAPI = get_app()
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get(
+    "/bupt_nuclear/img",
+    responses = {
+        200: {
+            "content": {
+                "image/png": {}
+            }
+        }
+    },
+    response_class=Response)
+async def get_bupt_nuclear_img() -> Response:
+    result = await generate_card(await get_nuclear_people_number())
+    return Response(base64.b64decode(result), media_type="image/png")
+
+@app.get("/bupt_nuclear/json")
+async def get_bupt_nuclear_json() -> JSONResponse:
+    result = [json.loads(i.json()) for i in (await get_nuclear_people_number())]
+    return JSONResponse({"result": result})

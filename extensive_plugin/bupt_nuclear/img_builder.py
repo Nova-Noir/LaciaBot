@@ -97,3 +97,4 @@ async def generate_card(nuclear_list: List[BUPT_Nuclear_Model]) -> str:
 
         await bk.apaste(data_back, (0, 120 + 155*i), True)
     return bk.pic2bs4()
+    

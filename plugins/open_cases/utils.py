@@ -73,7 +73,7 @@ async def util_get_buff_price(case_name: str = "狂牙大行动") -> str:
                                     "page_num": f"{i}",
                                     "search": skin,
                                 }
-                                res = await AsyncHttpx.get(url, params=parameter)
+                                res = await AsyncHttpx.get(url, params=parameter, cookies=cookie)
                                 data = res.json()["data"][
                                     "items"
                                 ]
@@ -106,7 +106,8 @@ async def util_get_buff_price(case_name: str = "狂牙大行动") -> str:
                     else:
                         failed_list.append(skin)
                         logger.warning(f"{skin}更新失败")
-                except Exception:
+                except Exception as e:
+                    logger.error(e)
                     failed_list.append(skin)
                     logger.warning(f"{skin}更新失败")
                     continue
