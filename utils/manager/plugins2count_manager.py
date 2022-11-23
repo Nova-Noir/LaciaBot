@@ -49,9 +49,7 @@ class Plugins2countManager(StaticData):
         参数:
             :param plugin: 模块名
         """
-        if self.check_plugin_count_status(plugin):
-            return self._data[plugin]
-        return None
+        return self._data[plugin] if self.check_plugin_count_status(plugin) else None
 
     def get_plugin_data(self, plugin: str) -> Optional[PluginCount]:
         """

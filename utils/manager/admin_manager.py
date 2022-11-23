@@ -63,9 +63,7 @@ class AdminManager(StaticData):
         参数:
             :param plugin: 模块名
         """
-        if plugin in self._data.keys():
-            return self._data[plugin].level
-        return 0
+        return self._data[plugin].level if plugin in self._data.keys() else 0
 
     def get_plugin_module(self, cmd: str) -> Optional[str]:
         """
@@ -74,7 +72,11 @@ class AdminManager(StaticData):
         参数:
             :param cmd: 命令
         """
-        for key in self._data.keys():
-            if self._data[key].cmd and cmd in self._data[key].cmd:
-                return key
-        return None
+        return next(
+            (
+                key
+                for key in self._data.keys()
+                if self._data[key].cmd and cmd in self._data[key].cmd
+            ),
+            None,
+        )

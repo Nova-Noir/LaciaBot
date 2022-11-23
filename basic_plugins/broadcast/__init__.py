@@ -37,9 +37,7 @@ broadcast = on_command("广播-", priority=1, permission=SUPERUSER, block=True)
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     msg = arg.extract_plain_text().strip()
     img_list = get_message_img(event.json())
-    rst = ""
-    for img in img_list:
-        rst += image(img)
+    rst = "".join(image(img) for img in img_list)
     gl = await bot.get_group_list()
     gl = [
         g["group_id"]
@@ -62,6 +60,6 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
             logger.error(f"GROUP {g} 投递广播失败：{type(e)}")
             error += f"GROUP {g} 投递广播失败：{type(e)}\n"
         await asyncio.sleep(0.5)
-    await broadcast.send(f"已播报至 100% 的群聊")
+    await broadcast.send("已播报至 100% 的群聊")
     if error:
         await broadcast.send(f"播报时错误：{error}")

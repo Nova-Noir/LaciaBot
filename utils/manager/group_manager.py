@@ -300,9 +300,8 @@ class GroupManager(StaticData):
         if status == "block":
             if module not in self._data.group_manager[group_id].close_plugins:
                 self._data.group_manager[group_id].close_plugins.append(module)
-        else:
-            if module in self._data.group_manager[group_id].close_plugins:
-                self._data.group_manager[group_id].close_plugins.remove(module)
+        elif module in self._data.group_manager[group_id].close_plugins:
+            self._data.group_manager[group_id].close_plugins.remove(module)
         if is_save:
             self.save()
 

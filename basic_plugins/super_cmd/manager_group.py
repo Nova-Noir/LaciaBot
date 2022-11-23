@@ -74,8 +74,7 @@ group_auth = on_command(
 
 @del_group.handle()
 async def _(bot: Bot, arg: Message = CommandArg()):
-    group_id = arg.extract_plain_text().strip()
-    if group_id:
+    if group_id := arg.extract_plain_text().strip():
         if is_number(group_id):
             try:
                 await bot.set_group_leave(group_id=int(group_id))
@@ -86,9 +85,9 @@ async def _(bot: Bot, arg: Message = CommandArg()):
             except Exception as e:
                 logger.info(f"退出群聊 {group_id} 失败 e:{e}")
         else:
-            await del_group.finish(f"请输入正确的群号", at_sender=True)
+            await del_group.finish("请输入正确的群号", at_sender=True)
     else:
-        await del_group.finish(f"请输入群号", at_sender=True)
+        await del_group.finish("请输入群号", at_sender=True)
 
 
 @add_group_level.handle()
@@ -144,11 +143,11 @@ async def _(bot: Bot, cmd: Tuple[str, ...] = Command(), arg: Message = CommandAr
     cmd = cmd[0]
     msg = arg.extract_plain_text().strip().split()
     all_group = [g["group_id"] for g in await bot.get_group_list()]
-    group_list = []
-    for group in msg:
-        if is_number(group) and int(group) in all_group:
-            group_list.append(int(group))
-    if group_list:
+    if group_list := [
+        int(group)
+        for group in msg
+        if is_number(group) and int(group) in all_group
+    ]:
         for group in group_list:
             if cmd in ["添加群白名单"]:
                 group_manager.add_group_white_list(group)
@@ -163,8 +162,7 @@ async def _(bot: Bot, cmd: Tuple[str, ...] = Command(), arg: Message = CommandAr
 @show_group_whitelist.handle()
 async def _():
     x = group_manager.get_group_white_list()
-    x = [str(g) for g in x]
-    if x:
+    if x := [str(g) for g in x]:
         await show_group_whitelist.send("目前的群白名单：\n" + "\n".join(x))
     else:
         await show_group_whitelist.send("没有任何群在群白名单...")
@@ -198,7 +196,6 @@ async def _(bot: Bot, cmd: Tuple[str, ...] = Command(), arg: Message = CommandAr
                     group_info["member_count"],
                     1,
                 )
-        else:
-            if await GroupInfo.get_group_info(group_id):
-                await GroupInfo.set_group_flag(group_id, 0)
+        elif await GroupInfo.get_group_info(group_id):
+            await GroupInfo.set_group_flag(group_id, 0)
         await group_auth.send(f"已为 {group_id} {cmd[:2]}群认证..")

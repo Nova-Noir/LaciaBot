@@ -89,38 +89,39 @@ class GoodsUseFuncManager:
             # 使用方法
             args = inspect.signature(self._data[goods_name]["func"]).parameters
             if args and list(args.keys())[0] != "kwargs":
-                if asyncio.iscoroutinefunction(self._data[goods_name]["func"]):
-                    return await self._data[goods_name]["func"](
+                return (
+                    await self._data[goods_name]["func"](
                         *self._parse_args(args, param, **kwargs)
                     )
-                else:
-                    return self._data[goods_name]["func"](
+                    if asyncio.iscoroutinefunction(self._data[goods_name]["func"])
+                    else self._data[goods_name]["func"](
                         *self._parse_args(args, param, **kwargs)
                     )
+                )
+
+            if asyncio.iscoroutinefunction(self._data[goods_name]["func"]):
+                return await self._data[goods_name]["func"](
+                    **kwargs,
+                )
             else:
-                if asyncio.iscoroutinefunction(self._data[goods_name]["func"]):
-                    return await self._data[goods_name]["func"](
-                        **kwargs,
-                    )
-                else:
-                    return self._data[goods_name]["func"](
-                        **kwargs,
-                    )
+                return self._data[goods_name]["func"](
+                    **kwargs,
+                )
 
     async def run_handle(self, goods_name: str, type_: str, param: ShopParam, **kwargs):
-        if self._data[goods_name].get(type_):
-            for func in self._data[goods_name].get(type_):
-                args = inspect.signature(func).parameters
-                if args and list(args.keys())[0] != "kwargs":
-                    if asyncio.iscoroutinefunction(func):
-                        await func(*self._parse_args(args, param, **kwargs))
-                    else:
-                        func(*self._parse_args(args, param, **kwargs))
+        if not self._data[goods_name].get(type_):
+            return
+        for func in self._data[goods_name].get(type_):
+            args = inspect.signature(func).parameters
+            if args and list(args.keys())[0] != "kwargs":
+                if asyncio.iscoroutinefunction(func):
+                    await func(*self._parse_args(args, param, **kwargs))
                 else:
-                    if asyncio.iscoroutinefunction(func):
-                        await func(**kwargs)
-                    else:
-                        func(**kwargs)
+                    func(*self._parse_args(args, param, **kwargs))
+            elif asyncio.iscoroutinefunction(func):
+                await func(**kwargs)
+            else:
+                func(**kwargs)
 
     def check_send_success_message(self, goods_name: str) -> bool:
         """
@@ -136,9 +137,7 @@ class GoodsUseFuncManager:
         获取商品使用方法的kwargs
         :param goods_name: 商品名称
         """
-        if self.exists(goods_name):
-            return self._data[goods_name]["kwargs"]
-        return {}
+        return self._data[goods_name]["kwargs"] if self.exists(goods_name) else {}
 
     def init_model(self, goods_name: str, bot: Bot, event: GroupMessageEvent, num: int, text: str):
         return self._data[goods_name]["model"](

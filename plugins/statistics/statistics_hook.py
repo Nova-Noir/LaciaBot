@@ -118,10 +118,7 @@ async def _(
             # print(_prefix_count_dict)
             if group_id != "total":
                 for data in [_prefix_count_dict, _prefix_user_count_dict]:
-                    if data == _prefix_count_dict:
-                        key = group_id
-                    else:
-                        key = user_id
+                    key = group_id if data == _prefix_count_dict else user_id
                     data["total_statistics"][key][plugin_name] += 1
                     data["day_statistics"][key][plugin_name] += 1
                     data["week_statistics"][key][str(day_index % 7)][
@@ -141,10 +138,7 @@ async def _(
 def check_exists_key(group_id: str, user_id: str, plugin_name: str):
     global _prefix_count_dict, _prefix_user_count_dict
     for data in [_prefix_count_dict, _prefix_user_count_dict]:
-        if data == _prefix_count_dict:
-            key = group_id
-        else:
-            key = user_id
+        key = group_id if data == _prefix_count_dict else user_id
         if not data["total_statistics"]["total"].get(plugin_name):
             data["total_statistics"]["total"][plugin_name] = 0
         if not data["day_statistics"]["total"].get(plugin_name):
@@ -153,7 +147,7 @@ def check_exists_key(group_id: str, user_id: str, plugin_name: str):
             data["week_statistics"]["total"][plugin_name] = 0
         if not data["month_statistics"]["total"].get(plugin_name):
             data["month_statistics"]["total"][plugin_name] = 0
-        
+
         if not data["total_statistics"].get(key):
             data["total_statistics"][key] = {}
         if not data["total_statistics"][key].get(plugin_name):
@@ -172,7 +166,7 @@ def check_exists_key(group_id: str, user_id: str, plugin_name: str):
             if data["week_statistics"][key]["0"].get(plugin_name) is None:
                 for i in range(7):
                     data["week_statistics"][key][str(i)][plugin_name] = 0
-    
+
             if not data["month_statistics"].get(key):
                 data["month_statistics"][key] = {}
             if data["month_statistics"][key].get("0") is None:

@@ -86,9 +86,7 @@ async def _create_help_img(
                     text_type = int(plugin_type[1])
                 except ValueError as e:
                     logger.warning(f"生成列向帮助排列失败 {plugin_name}: {type(e)}: {e}")
-                plugin_type = plugin_type[0]
-            else:
-                plugin_type = plugin_type[0]
+            plugin_type = plugin_type[0]
             try:
                 plugin_cmd = _module.__getattribute__("__plugin_cmd__")
                 plugin_cmd = [x for x in plugin_cmd if "[_superuser]" not in x]
@@ -96,7 +94,7 @@ async def _create_help_img(
                 plugin_cmd = []
             if plugin_type not in matchers_data.keys():
                 matchers_data[plugin_type] = {}
-            if plugin_des in _des_tmp.keys():
+            if plugin_des in _des_tmp:
                 try:
                     matchers_data[plugin_type][_des_tmp[plugin_des]]["cmd"] = (
                         matchers_data[plugin_type][_des_tmp[plugin_des]]["cmd"]
@@ -126,13 +124,10 @@ async def _create_help_img(
             logger.warning(f"获取功能 {matcher.plugin_name}: {plugin_name} 设置失败...e：{e}")
     help_img_list = []
     simple_help_img_list = []
-    types = list(matchers_data.keys())
-    types.sort()
-    ix = 0
+    types = sorted(matchers_data.keys())
     # 详细帮助
-    for type_ in types:
-        keys = list(matchers_data[type_].keys())
-        keys.sort()
+    for ix, type_ in enumerate(types):
+        keys = sorted(matchers_data[type_].keys())
         help_str = f"{type_ if type_ != 'normal' else '功能'}:\n\n"
         simple_help_str = f"{type_ if type_ != 'normal' else '功能'}:\n\n"
         for i, k in enumerate(keys):
@@ -153,29 +148,31 @@ async def _create_help_img(
             )
             if matchers_data[type_][k]["text_type"] == 1:
                 _x = tmp_img.getsize(
-                    f"{i+1}".rjust(5)
-                    + f'.{k}: {matchers_data[type_][k]["des"]} {"->" if matchers_data[type_][k]["cmd"] else ""} '
+                    f'{f"{i + 1}".rjust(5)}.{k}: {matchers_data[type_][k]["des"]} {"->" if matchers_data[type_][k]["cmd"] else ""} '
                 )[0]
-                _str = (
-                    f"{i+1}".rjust(5)
-                    + f'.{k}: {matchers_data[type_][k]["des"]} {"->" if matchers_data[type_][k]["cmd"] else ""} '
-                )
+
+                _str = f'{f"{i + 1}".rjust(5)}.{k}: {matchers_data[type_][k]["des"]} {"->" if matchers_data[type_][k]["cmd"] else ""} '
+
                 _str += matchers_data[type_][k]["cmd"][0] + "\n"
                 for c in matchers_data[type_][k]["cmd"][1:]:
                     _str += "".rjust(int(_x * 0.125) + 1) + f"{c}\n"
                 help_str += _str
             else:
                 help_str += (
-                    f"{i+1}".rjust(5)
-                    + f'.{k}: {matchers_data[type_][k]["des"]} {"->" if matchers_data[type_][k]["cmd"] else ""} '
+                    f'{f"{i + 1}".rjust(5)}.{k}: {matchers_data[type_][k]["des"]} {"->" if matchers_data[type_][k]["cmd"] else ""} '
                     + " / ".join(matchers_data[type_][k]["cmd"])
                     + "\n"
                 )
+
         height = len(help_str.split("\n")) * (font_height + 5)
         simple_height = len(simple_help_str.split("\n")) * (font_height + 5)
         A = BuildImage(
-            width + 150, height, font_size=24, color="white" if not ix % 2 else "black"
+            width + 150,
+            height,
+            font_size=24,
+            color="black" if ix % 2 else "white",
         )
+
         A.text((10, 10), help_str, (255, 255, 255) if ix % 2 else (0, 0, 0))
         # 生成各个分类的插件简易帮助图片
         simple_width = 0
@@ -189,8 +186,9 @@ async def _create_help_img(
             simple_width + 20,
             simple_height,
             font_size=24,
-            color="white" if not ix % 2 else "black",
+            color="black" if ix % 2 else "white",
         )
+
         # 切分，判断插件开关状态
         _s_height = 10
         for _s in simple_help_str.split("\n"):
@@ -199,9 +197,8 @@ async def _create_help_img(
             if "<|_|~|>" in _s:
                 _x = _s.split("<|_|~|>")
                 _flag_sp = _x[-1].split("|")
-                if group_id:
-                    if _flag_sp[0].lower() != "true":
-                        text_color = (252, 75, 13)
+                if group_id and _flag_sp[0].lower() != "true":
+                    text_color = (252, 75, 13)
                 if _flag_sp[1].lower() == "true":
                     _line_flag = True
                 _s = _x[0]
@@ -221,12 +218,9 @@ async def _create_help_img(
         # B.text((10, 10), simple_help_str, (255, 255, 255) if ix % 2 else (0, 0, 0))
         bk.paste(B, center_type="center")
         bk.transparent(2)
-        ix += 1
         help_img_list.append(A)
         simple_help_img_list.append(bk)
-    height = 0
-    for img in help_img_list:
-        height += img.h
+    height = sum(img.h for img in help_img_list)
     if not group_id:
         A = BuildImage(width + 150, height + 50, font_size=24)
         A.text(
@@ -282,8 +276,9 @@ def get_plugin_help(msg: str, is_super: bool = False) -> Optional[str]:
     :param msg: 功能cmd
     :param is_super: 是否为超级用户
     """
-    module = plugins2settings_manager.get_plugin_module(msg) or admin_manager.get_plugin_module(msg)
-    if module:
+    if module := plugins2settings_manager.get_plugin_module(
+        msg
+    ) or admin_manager.get_plugin_module(msg):
         try:
             plugin = nonebot.plugin.get_plugin(module)
             metadata = plugin.metadata

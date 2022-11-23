@@ -104,7 +104,6 @@ def get_city_and_province_list() -> List[str]:
             data = {}
     city_list = ["中国"]
     for p in data.keys():
-        for c in data[p]:
-            city_list.append(c)
+        city_list.extend(iter(data[p]))
         city_list.append(p)
     return city_list

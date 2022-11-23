@@ -10,8 +10,7 @@ background_path = IMAGE_PATH / "background" / "help" / "simple_help"
 
 async def build_help_image(image_group: List[List[BuildImage]], h: int):
     bk = None
-    random_bk = os.listdir(background_path)
-    if random_bk:
+    if random_bk := os.listdir(background_path):
         bk = random.choice(random_bk)
     A = BuildImage(
         h,
@@ -26,7 +25,7 @@ async def build_help_image(image_group: List[List[BuildImage]], h: int):
         for img in ig:
             await A.apaste(img, (curr_w, curr_h), True)
             curr_h += img.h + 10
-        curr_w += max([x.w for x in ig]) + 30
+        curr_w += max(x.w for x in ig) + 30
     return A
 
 
@@ -65,7 +64,7 @@ def group_image(image_list: List[BuildImage]) -> Tuple[List[List[BuildImage]], i
                         break
                 else:
                     break
-            total_w += max([x.w for x in group]) + 15
+            total_w += max(x.w for x in group) + 15
             image_group.append(group)
     while surplus_list:
         surplus_list = [x for x in surplus_list if x.uid not in is_use]
@@ -77,7 +76,7 @@ def group_image(image_list: List[BuildImage]) -> Tuple[List[List[BuildImage]], i
                 _w = 0
                 index = -1
                 for i, ig in enumerate(image_group):
-                    if s := sum([x.h for x in ig]) > _w:
+                    if s := sum(x.h for x in ig) > _w:
                         _w = s
                         index = i
                 if index != -1:
@@ -86,20 +85,23 @@ def group_image(image_list: List[BuildImage]) -> Tuple[List[List[BuildImage]], i
     max_h = 0
     max_w = 0
     for i, ig in enumerate(image_group):
-        if (_h := sum([x.h + 15 for x in ig])) > max_h:
+        if (_h := sum(x.h + 15 for x in ig)) > max_h:
             max_h = _h
-        max_w += max([x.w for x in ig]) + 30
+        max_w += max(x.w for x in ig) + 30
     is_use.clear()
     while abs(max_h - max_w) > 200 and len(image_group) - 1 >= len(image_group[-1]):
         for img in image_group[-1]:
             _min_h = 0
             _min_index = -1
             for i, ig in enumerate(image_group):
-                if i not in is_use and (_h := sum([x.h for x in ig]) + img.h) > _min_h:
+                if (
+                    i not in is_use
+                    and (_h := sum(x.h for x in ig) + img.h) > _min_h
+                ):
                     _min_h = _h
                     _min_index = i
             is_use.append(_min_index)
             image_group[_min_index].append(img)
-        max_w -= max([x.w for x in image_group[-1]])
+        max_w -= max(x.w for x in image_group[-1])
         image_group.pop(-1)
     return image_group, max(max_h + 250, max_w + 70)

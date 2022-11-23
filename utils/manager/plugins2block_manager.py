@@ -55,9 +55,7 @@ class Plugins2blockManager(StaticData):
         参数:
             :param plugin: 模块名
         """
-        if self.check_plugin_block_status(plugin):
-            return self._data[plugin]
-        return None
+        return self._data[plugin] if self.check_plugin_block_status(plugin) else None
 
     def check_plugin_block_status(self, plugin: str) -> bool:
         """

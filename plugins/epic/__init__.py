@@ -38,9 +38,7 @@ epic = on_regex("^epic$", priority=5, block=True)
 
 @epic.handle()
 async def handle(bot: Bot, event: MessageEvent, state: T_State):
-    Type_Event = "Private"
-    if isinstance(event, GroupMessageEvent):
-        Type_Event = "Group"
+    Type_Event = "Group" if isinstance(event, GroupMessageEvent) else "Private"
     msg_list, code = await get_epic_free(bot, Type_Event)
     if code == 404:
         await epic.send(msg_list)

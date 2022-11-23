@@ -84,11 +84,10 @@ def init_plugins_settings():
                                     matcher.plugin_name
                                 ).plugin_type
                             )
+                        elif hasattr(_module, "__plugin_type__"):
+                            plugin_type = _module.__getattribute__("__plugin_type__")
                         else:
-                            if hasattr(_module, "__plugin_type__"):
-                                plugin_type = _module.__getattribute__("__plugin_type__")
-                            else:
-                                plugin_type = ("normal",)
+                            plugin_type = ("normal",)
                         if plugin_settings and matcher.plugin_name:
                             plugins2settings_manager.add_plugin_settings(
                                 matcher.plugin_name,

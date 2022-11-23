@@ -19,7 +19,7 @@ def CostGold(gold: int):
     """
     async def dependency(matcher: Matcher, event: GroupMessageEvent):
         if (await BagUser.get_gold(event.user_id, event.group_id)) < gold:
-            await matcher.finish(at(event.user_id) + f"金币不足..该功能需要{gold}金币..")
+            await matcher.finish(f"{at(event.user_id)}金币不足..该功能需要{gold}金币..")
         await BagUser.spend_gold(event.user_id, event.group_id, gold)
         await UserShopGoldLog.add_shop_log(event.user_id, event.group_id, 2, matcher.plugin_name, gold, 1)
 

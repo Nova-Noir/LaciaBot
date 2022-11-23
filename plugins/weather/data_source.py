@@ -30,17 +30,15 @@ async def get_weather_of_city(city: str) -> str:
                 f"https://v0.yiketianqi.com/api?unescape=1&version=v91&appid=43656176&appsecret=I42og6Lm&ext=&cityid=&city={city[:-1]}"
             )
         ).json()
-        if wh := data_json.get('data'):
-            w_type = wh[0]["wea_day"]
-            w_max = wh[0]["tem1"]
-            w_min = wh[0]["tem2"]
-            fengli = wh[0]["win_speed"]
-            ganmao = wh[0]["narrative"]
-            fengxiang = ','.join(wh[0].get('win', []))
-            repass = f"{city}的天气是 {w_type} 天\n最高温度: {w_max}\n最低温度: {w_min}\n风力: {fengli} {fengxiang}\n{ganmao}"
-            return repass
-        else:
+        if not (wh := data_json.get('data')):
             return data_json.get("errmsg") or "好像出错了？再试试？"
+        w_type = wh[0]["wea_day"]
+        w_max = wh[0]["tem1"]
+        w_min = wh[0]["tem2"]
+        fengli = wh[0]["win_speed"]
+        ganmao = wh[0]["narrative"]
+        fengxiang = ','.join(wh[0].get('win', []))
+        return f"{city}的天气是 {w_type} 天\n最高温度: {w_max}\n最低温度: {w_min}\n风力: {fengli} {fengxiang}\n{ganmao}"
 
 
 def _check_exists_city(city: str) -> int:
@@ -54,10 +52,7 @@ def _check_exists_city(city: str) -> int:
         for city_ in data[province]:
             if city_ == city:
                 return 200
-    for province in data.keys():
-        if city == province:
-            return 999
-    return 998
+    return next((999 for province in data.keys() if city == province), 998)
 
 
 def get_city_list() -> List[str]:
@@ -73,7 +68,6 @@ def get_city_list() -> List[str]:
             data = {}
     city_list = []
     for p in data.keys():
-        for c in data[p]:
-            city_list.append(c)
+        city_list.extend(iter(data[p]))
         city_list.append(p)
     return city_list

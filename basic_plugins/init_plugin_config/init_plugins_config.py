@@ -35,12 +35,14 @@ def init_plugins_config():
         if not plugin_version and hasattr(_module, "__plugin_version__"):
             plugin_version = _module.__getattribute__("__plugin_version__")
         if metadata and metadata.config:
-            plugin_configs = {}
-            for key, value in metadata.config.__fields__.items():
-                plugin_configs[key.upper()] = {
+            plugin_configs = {
+                key.upper(): {
                     "value": value.default,
-                    "default_value": value.default
+                    "default_value": value.default,
                 }
+                for key, value in metadata.config.__fields__.items()
+            }
+
         else:
             try:
                 plugin_configs = _module.__getattribute__("__plugin_configs__")
@@ -164,8 +166,7 @@ def _replace_config():
                 plugin_data = Config.get(plugin)
                 for x in list(Config.get(plugin).keys()):
                     try:
-                        _x = plugin_data[x].get("name")
-                        if _x:
+                        if _x := plugin_data[x].get("name"):
                             plugin_name = _x
                     except AttributeError:
                         pass
