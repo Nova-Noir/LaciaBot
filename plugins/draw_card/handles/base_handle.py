@@ -106,22 +106,22 @@ class BaseHandle(Generic[TC]):
             except KeyError:
                 star_dict[card.star_str] = 1
 
-        rst = ""
-        for star_str, count in star_dict.items():
-            rst += f"[{star_str}×{count}] "
+        rst = "".join(
+            f"[{star_str}×{count}] " for star_str, count in star_dict.items()
+        )
         return rst.strip()
 
     def format_max_star(
         self, card_list: List[Tuple[TC, int]], up_list: List[str] = [], **kwargs
     ) -> str:
         up_list = up_list or kwargs.get("up_list", [])
-        rst = ""
-        for card, index in card_list:
-            if card.star == self.max_star:
-                if card.name in up_list:
-                    rst += f"第 {index} 抽获取UP {card.name}\n"
-                else:
-                    rst += f"第 {index} 抽获取 {card.name}\n"
+        rst = "".join(
+            f"第 {index} 抽获取UP {card.name}\n"
+            if card.name in up_list
+            else f"第 {index} 抽获取 {card.name}\n"
+            for card, index in card_list
+            if card.star == self.max_star
+        )
         return rst.strip()
 
     def format_max_card(self, card_list: List[TC], **kwargs) -> str:
@@ -135,9 +135,7 @@ class BaseHandle(Generic[TC]):
 
         max_count = max(card_dict.values())
         max_card = list(card_dict.keys())[list(card_dict.values()).index(max_count)]
-        if max_count <= 1:
-            return ""
-        return f"抽取到最多的是{max_card.name}，共抽取了{max_count}次"
+        return "" if max_count <= 1 else f"抽取到最多的是{max_card.name}，共抽取了{max_count}次"
 
     def generate_img(
         self,
@@ -217,10 +215,7 @@ class BaseHandle(Generic[TC]):
             json.dump(data, f, ensure_ascii=False, indent=4)
 
     def data_exists(self) -> bool:
-        for file in self.data_files:
-            if not (self.data_path / file).exists():
-                return False
-        return True
+        return all((self.data_path / file).exists() for file in self.data_files)
 
     def _init_data(self):
         raise NotImplementedError

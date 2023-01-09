@@ -33,10 +33,9 @@ def get_plugin_help(msg: str, is_super: bool = False) -> Optional[str]:
         :param msg: 功能cmd
         :param is_super: 是否为超级用户
     """
-    module = plugins2settings_manager.get_plugin_module(
+    if module := plugins2settings_manager.get_plugin_module(
         msg
-    ) or admin_manager.get_plugin_module(msg)
-    if module:
+    ) or admin_manager.get_plugin_module(msg):
         try:
             plugin = nonebot.plugin.get_plugin(module)
             metadata = plugin.metadata

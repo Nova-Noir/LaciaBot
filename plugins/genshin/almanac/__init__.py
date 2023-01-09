@@ -55,14 +55,12 @@ async def _(event: MessageEvent):
     minute=25,
 )
 async def _():
-    # 每日提醒
-    bot = get_bot()
-    if bot:
+    if bot := get_bot():
         gl = await bot.get_group_list()
         gl = [g["group_id"] for g in gl]
         alc_img = image(b64=await build_alc_image())
         if alc_img:
-            mes = "[[_task|genshin_alc]]" + alc_img
+            mes = f"[[_task|genshin_alc]]{alc_img}"
             for gid in gl:
                 if group_manager.check_group_task_status(gid, "genshin_alc"):
-                    await bot.send_group_msg(group_id=int(gid), message="" + mes)
+                    await bot.send_group_msg(group_id=int(gid), message=f"{mes}")

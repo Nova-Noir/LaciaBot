@@ -54,10 +54,10 @@ class Plugins2countManager(StaticData[PluginCount]):
         """
         if isinstance(max_count, PluginCount):
             self._data[plugin] = max_count
-        else:
-            if limit_type not in ["user", "group"]:
-                raise ValueError(f"{plugin} 添加count限制错误，‘limit_type‘ 必须为 'user'/'group'")
+        elif limit_type in ["user", "group"]:
             self._data[plugin] = PluginCount(max_count=max_count, status=status, limit_type=limit_type, rst=rst)
+        else:
+            raise ValueError(f"{plugin} 添加count限制错误，‘limit_type‘ 必须为 'user'/'group'")
 
     def get_plugin_count_data(self, plugin: str) -> Optional[PluginCount]:
         """
@@ -66,9 +66,7 @@ class Plugins2countManager(StaticData[PluginCount]):
         参数:
             :param plugin: 模块名
         """
-        if self.check_plugin_count_status(plugin):
-            return self._data[plugin]
-        return None
+        return self._data[plugin] if self.check_plugin_count_status(plugin) else None
 
     def get_plugin_data(self, plugin: str) -> Optional[PluginCount]:
         """

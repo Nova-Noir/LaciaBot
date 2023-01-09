@@ -37,20 +37,18 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
             if str(event.user_id) in bot.config.superusers:
                 is_super = True
             msg = msg.replace('-super', '').strip()
-        msg = get_plugin_help(msg, is_super)
-        if msg:
+        if msg := get_plugin_help(msg, is_super):
             await simple_help.send(image(b64=msg))
         else:
             await simple_help.send("没有此功能的帮助信息...")
+    elif isinstance(event, GroupMessageEvent):
+        _image_path = GROUP_HELP_PATH / f"{event.group_id}.png"
+        if not _image_path.exists():
+            await create_help_img(event.group_id)
+        await simple_help.send(image(_image_path))
     else:
-        if isinstance(event, GroupMessageEvent):
-            _image_path = GROUP_HELP_PATH / f"{event.group_id}.png"
-            if not _image_path.exists():
-                await create_help_img(event.group_id)
-            await simple_help.send(image(_image_path))
-        else:
-            if not simple_help_image.exists():
-                if simple_help_image.exists():
-                    simple_help_image.unlink()
-                await create_help_img(None)
-            await simple_help.finish(image("simple_help.png"))
+        if not simple_help_image.exists():
+            if simple_help_image.exists():
+                simple_help_image.unlink()
+            await create_help_img(None)
+        await simple_help.finish(image("simple_help.png"))

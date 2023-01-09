@@ -35,9 +35,9 @@ async def _(bot: Bot, api: str, data: Dict[str, Any]):
                     )
                 )
             )
-            and r.group(1) in group_manager.get_task_data().keys()
+            and r[1] in group_manager.get_task_data().keys()
         ):
-            task = r.group(1)
+            task = r[1]
             group_id = data["group_id"]
     except Exception as e:
         logger.error(f"TaskHook ERROR {type(e)}：{e}")
@@ -48,9 +48,8 @@ async def _(bot: Bot, api: str, data: Dict[str, Any]):
                 or not group_manager.check_task_status(task, group_id)
             ):
                 raise MockApiException(f"被动技能 {task} 处于关闭状态...")
-            else:
-                msg = str(data["message"]).strip()
-                msg = msg.replace(f"&#91;&#91;_task|{task}&#93;&#93;", "").replace(
-                    f"[[_task|{task}]]", ""
-                )
-                data["message"] = Message(msg)
+            msg = str(data["message"]).strip()
+            msg = msg.replace(f"&#91;&#91;_task|{task}&#93;&#93;", "").replace(
+                f"[[_task|{task}]]", ""
+            )
+            data["message"] = Message(msg)

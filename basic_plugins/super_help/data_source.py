@@ -48,8 +48,7 @@ async def create_help_image():
                     image = await help_template(plugin_data.name, usage)
                     image_list.append(image)
             if plugin_data.task:
-                for x in plugin_data.task.keys():
-                    task_list.append(plugin_data.task[x])
+                task_list.extend(plugin_data.task[x] for x in plugin_data.task.keys())
         except Exception as e:
             logger.warning(
                 f"获取超级用户插件 {plugin_data.model}: {plugin_data.name} 设置失败... {type(e)}：{e}"
