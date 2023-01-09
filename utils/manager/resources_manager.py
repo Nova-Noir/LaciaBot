@@ -45,25 +45,37 @@ class ResourcesManager(StaticData):
         :param module: 模块
         :param source_file: 源文件路径
         """
-        if not source_file:
-            if module in self._data.keys():
-                for x in self._data[module].keys():
-                    move_file = Path(self._data[module][x])
-                    if move_file not in [IMAGE_PATH, DATA_PATH, RECORD_PATH, TEXT_PATH, FONT_PATH, LOG_PATH]:
-                        if move_file.exists():
-                            shutil.rmtree(move_file.absolute(), ignore_errors=True)
-                            logger.info(f"已清除插件 {module} 资源路径：{self._data[module][x]}")
-                            del self._data[module][x]
-        else:
+        if source_file:
             if isinstance(source_file, Path):
                 source_file = str(source_file.absolute())
-            if source_file:
-                if module in self._data.keys() and source_file in self._data[module].keys():
-                    move_file = Path(self._data[module][source_file])
-                    if move_file not in [IMAGE_PATH, DATA_PATH, RECORD_PATH, TEXT_PATH, FONT_PATH, LOG_PATH]:
-                        if move_file.exists():
-                            shutil.rmtree(move_file.absolute(), ignore_errors=True)
-                        del self._data[module][source_file]
+            if (
+                source_file
+                and module in self._data.keys()
+                and source_file in self._data[module].keys()
+            ):
+                move_file = Path(self._data[module][source_file])
+                if move_file not in [IMAGE_PATH, DATA_PATH, RECORD_PATH, TEXT_PATH, FONT_PATH, LOG_PATH]:
+                    if move_file.exists():
+                        shutil.rmtree(move_file.absolute(), ignore_errors=True)
+                    del self._data[module][source_file]
+        elif module in self._data.keys():
+            for x in self._data[module].keys():
+                move_file = Path(self._data[module][x])
+                if (
+                    move_file
+                    not in [
+                        IMAGE_PATH,
+                        DATA_PATH,
+                        RECORD_PATH,
+                        TEXT_PATH,
+                        FONT_PATH,
+                        LOG_PATH,
+                    ]
+                    and move_file.exists()
+                ):
+                    shutil.rmtree(move_file.absolute(), ignore_errors=True)
+                    logger.info(f"已清除插件 {module} 资源路径：{self._data[module][x]}")
+                    del self._data[module][x]
         self.save()
 
     def start_move(self):

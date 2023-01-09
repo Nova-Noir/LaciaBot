@@ -21,18 +21,17 @@ async def _(user: User = Depends(token_to_user)) -> Result:
     group_data = group_manager.get_data()
     for group_id in group_data.group_manager:
         try:
-            task_list = []
             data = group_manager[group_id].dict()
-            for tn, status in data["group_task_status"].items():
-                task_list.append(
-                    Task(
-                        **{
-                            "name": tn,
-                            "nameZh": group_manager.get_task_data().get(tn) or tn,
-                            "status": status,
-                        }
-                    )
+            task_list = [
+                Task(
+                    **{
+                        "name": tn,
+                        "nameZh": group_manager.get_task_data().get(tn) or tn,
+                        "status": status,
+                    }
                 )
+                for tn, status in data["group_task_status"].items()
+            ]
             data["task"] = task_list
             if x := group_info.get(int(group_id)):
                 data["group"] = x

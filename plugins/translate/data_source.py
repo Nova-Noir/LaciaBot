@@ -4,14 +4,14 @@ import random
 from hashlib import md5
 
 # url = f"http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=null"
-url = f"https://fanyi-api.baidu.com/api/trans/vip/translate"
+url = "https://fanyi-api.baidu.com/api/trans/vip/translate"
 
 
 # 获取lts时间戳,salt加密盐,sign加密签名
 def get_lts_salt_sign(word):
     lts = str(int(time.time() * 10000))
     salt = lts + str(random.randint(0, 9))
-    string = "fanyideskweb" + word + salt + "Ygy_4c=r#e#4EX^NUGUc5"
+    string = f"fanyideskweb{word}{salt}Ygy_4c=r#e#4EX^NUGUc5"
     s = md5()
     # md5的加密串必须为字节码
     s.update(string.encode())

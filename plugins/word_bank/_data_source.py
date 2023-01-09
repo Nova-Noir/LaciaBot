@@ -26,7 +26,7 @@ async def get_problem_str(
         :param group_id: 群号
         :param word_scope: 获取类型
     """
-    if word_scope in [0, 2]:
+    if word_scope in {0, 2}:
         all_problem = await WordBank.get_problem_by_scope(word_scope)
     else:
         all_problem = await WordBank.get_group_all_problem(group_id)
@@ -84,10 +84,14 @@ async def word_handle(params: str, group_id: Optional[int], type_: str, word_sco
             if not is_number(index) or int(index) < 0 or int(index) > answer_num:
                 return "指定回答下标id必须为数字且在范围内"
             index = int(index)
-        if await WordBank.delete_group_problem(problem, group_id, index, word_scope):
-            return "删除词条成功"
-        return "词条不存在"
-    if type_ == "update":
+        return (
+            "删除词条成功"
+            if await WordBank.delete_group_problem(
+                problem, group_id, index, word_scope
+            )
+            else "词条不存在"
+        )
+    elif type_ == "update":
         replace_str = params[1]
         await WordBank.update_group_problem(problem, replace_str, group_id, word_scope=word_scope)
         return "修改词条成功"
@@ -119,13 +123,12 @@ async def show_word(
                     elif seg.type == "at":
                         temp += f'[at:{seg.data["qq"]}]'
                     elif seg.type == "image":
-                        temp += f"[image]"
+                        temp += "[image]"
                 msg += temp
-            msg_list.append(f"{index}." + msg if isinstance(msg, str) else msg[1])
+            msg_list.append(f"{index}.{msg}" if isinstance(msg, str) else msg[1])
         msg_list = [
             f'词条：{problem or (f"id: {id_}" if id_ is not None else f"gid: {gid}")} 的回答'
         ] + msg_list
-        return msg_list
     else:
         if group_id:
             _problem_list = await WordBank.get_group_all_problem(group_id)
@@ -139,7 +142,8 @@ async def show_word(
         if global_msg_list:
             msg_list.append("###以下为全局词条###")
             msg_list = msg_list + global_msg_list
-        return msg_list
+
+    return msg_list
 
 
 async def build_message(_problem_list: List[Tuple[Any, Union[MessageSegment, str]]]):
@@ -169,7 +173,7 @@ async def build_message(_problem_list: List[Tuple[Any, Union[MessageSegment, str
                 )
                 msg_list.append(image(b64=img.pic2bs4()))
                 temp_str = ""
-            msg_list.append(f"{index}." + problem)
+            msg_list.append(f"{index}.{problem}")
         index += 1
     if temp_str:
         img = await text2image(
@@ -199,13 +203,9 @@ async def _():
             problem: str = word.problem
             user_id = word.user_qq
             group_id = word.group_id
-            format_ = word.format
             answer = word.answer
-            # 仅对纯文本做处理
             if '[CQ' not in problem and '[CQ' not in answer and '[_to_me' not in problem:
-                if not format_:
-                    await WordBank.add_problem_answer(user_id, group_id, 1, 0, problem, answer)
-                else:
+                if format_ := word.format:
                     placeholder = []
                     for m in format_.split('<format>'):
                         x = m.split('<_s>')
@@ -224,6 +224,8 @@ async def _():
                                     # file.rename(new_file)
                                     placeholder.append(f'answer/{group_id}/{user_id}_{rand}.jpg')
                                     await WordBank._move(user_id, group_id, problem, answer, ",".join(placeholder))
+                else:
+                    await WordBank.add_problem_answer(user_id, group_id, 1, 0, problem, answer)
         await WordBank.add_problem_answer(0, 0, 999, 0, '_[OK', '_[OK')
         logger.info('词条 纯文本 数据迁移完成')
         (Path() / 'plugins' / 'word_bank' / '_old_model.py').unlink()

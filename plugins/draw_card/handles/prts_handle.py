@@ -134,7 +134,7 @@ class PrtsHandle(BaseHandle[Operator]):
         for i in range(card.star):
             bg.paste(star, (sep_w + img_w - 5 - star_h * (i + 1), sep_h), alpha=True)
         # 加名字
-        text = card.name[:7] + "..." if len(card.name) > 8 else card.name
+        text = f"{card.name[:7]}..." if len(card.name) > 8 else card.name
         font = load_font(fontsize=16)
         text_w, text_h = font.getsize(text)
         draw = ImageDraw.Draw(bg.markImg)
@@ -152,10 +152,9 @@ class PrtsHandle(BaseHandle[Operator]):
                 name=value["名称"],
                 star=int(value["星级"]),
                 limited="干员寻访" not in value["获取途径"],
-                recruit_only=True
-                if "干员寻访" not in value["获取途径"] and "公开招募" in value["获取途径"]
-                else False,
-                event_only=True if "活动获取" in value["获取途径"] else False,
+                recruit_only="干员寻访" not in value["获取途径"]
+                and "公开招募" in value["获取途径"],
+                event_only="活动获取" in value["获取途径"],
             )
             for key, value in self.load_data().items()
             if "阿米娅" not in key
@@ -253,13 +252,12 @@ class PrtsHandle(BaseHandle[Operator]):
                     lines = [contents[index-2+_] for _ in range(8)]  # 从 -2 开始是因为xpath获取的时间有的会在寻访开启这一句之前
                     lines.append("")  # 防止IndexError，加个空字符串
                     for idx, line in enumerate(lines):
-                        match = re.search(
+                        if match := re.search(
                             r"(\d{1,2}月\d{1,2}日.*?-.*?\d{1,2}月\d{1,2}日.*?$)", line
-                        )
-                        if match:
-                            time = match.group(1)
+                        ):
+                            time = match[1]
                         """因为 <p> 的诡异排版，所以有了下面的一段"""
-                        if ("★★" in line and "%" in line) or ("★★" in line and "%" in lines[idx + 1]):
+                        if "★★" in line and ("%" in line or "%" in lines[idx + 1]):
                             chars.append(line) if ("★★" in line and "%" in line) else chars.append(line + lines[idx + 1])
                     if not time:
                         continue
@@ -285,12 +283,12 @@ class PrtsHandle(BaseHandle[Operator]):
                             match = re.search(r"（占.*?的.*?(\d+).*?%）", char)
                         zoom = 1
                         if match:
-                            zoom = float(match.group(1))
+                            zoom = float(match[1])
                             zoom = zoom / 100 if zoom > 10 else zoom
-                        for name in names:
-                            up_chars.append(
-                                UpChar(name=name, star=star, limited=False, zoom=zoom)
-                            )
+                        up_chars.extend(
+                            UpChar(name=name, star=star, limited=False, zoom=zoom)
+                            for name in names
+                        )
                     break  # 这里break会导致个问题：如果一个公告里有两个池子，会漏掉下面的池子，比如 5.19 的定向寻访。但目前我也没啥好想法解决
             if title and start_time and end_time:
                 if start_time <= datetime.now() <= end_time:
@@ -309,6 +307,4 @@ class PrtsHandle(BaseHandle[Operator]):
         await self.update_up_char()
         self.load_up_char()
         if self.UP_EVENT:
-            return f"重载成功！\n当前UP池子：{self.UP_EVENT.title}" + MessageSegment.image(
-                self.UP_EVENT.pool_img
-            )
+            return f"重载成功！\n当前UP池子：{self.UP_EVENT.title}{MessageSegment.image(self.UP_EVENT.pool_img)}"

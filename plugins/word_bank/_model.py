@@ -238,7 +238,7 @@ class WordBank(db.Model):
                 sql_text += f" and (group_id = {event.group_id} or word_scope = 0)"
         else:
             query = query.where((cls.word_scope == 2) | (cls.word_scope == 0))
-            sql_text += f" and (word_scope = 2 or word_scope = 0)"
+            sql_text += " and (word_scope = 2 or word_scope = 0)"
             if word_type:
                 query = query.where(cls.word_scope == word_type)
                 sql_text += f" and word_scope = {word_scope}"
@@ -252,27 +252,19 @@ class WordBank(db.Model):
         # 模糊匹配
         if await db.first(
             db.text(
-                sql_text
-                + f" and word_type = 1 and :problem like '%' || problem || '%';"
+                f"{sql_text} and word_type = 1 and :problem like '%' || problem || '%';"
             ),
             problem=problem,
         ):
-            return (
-                sql_text
-                + f" and word_type = 1 and :problem like '%' || problem || '%';"
-            )
+            return f"{sql_text} and word_type = 1 and :problem like '%' || problem || '%';"
         # 正则匹配
         if await db.first(
             db.text(
-                sql_text
-                + f" and word_type = 2 and word_scope != 999 and :problem ~ problem;"
+                f"{sql_text} and word_type = 2 and word_scope != 999 and :problem ~ problem;"
             ),
             problem=problem,
         ):
-            return (
-                sql_text
-                + f" and word_type = 2 and word_scope != 999 and :problem ~ problem;"
-            )
+            return f"{sql_text} and word_type = 2 and word_scope != 999 and :problem ~ problem;"
         # if await db.first(
         #     db.text(sql_text + f" and word_type = 1 and word_scope != 999 and '{problem}' ~ problem;")
         # ):
@@ -370,28 +362,28 @@ class WordBank(db.Model):
             :param index: 回答下标
             :param word_scope: 词条范围
         """
-        if await cls.exists(None, group_id, problem, None, word_scope):
-            if index is not None:
-                if group_id:
-                    query = await cls.query.where(
-                        (cls.group_id == group_id) & (cls.problem == problem)
-                    ).gino.all()
-                else:
-                    query = await cls.query.where(
-                        (cls.word_scope == 0) & (cls.problem == problem)
-                    ).gino.all()
-                await query[index].delete()
-            else:
-                if group_id:
-                    await WordBank.delete.where(
-                        (cls.group_id == group_id) & (cls.problem == problem)
-                    ).gino.status()
-                else:
-                    await WordBank.delete.where(
-                        (cls.word_scope == word_scope) & (cls.problem == problem)
-                    ).gino.status()
-            return True
-        return False
+        if not await cls.exists(None, group_id, problem, None, word_scope):
+            return False
+        if index is not None:
+            query = (
+                await cls.query.where(
+                    (cls.group_id == group_id) & (cls.problem == problem)
+                ).gino.all()
+                if group_id
+                else await cls.query.where(
+                    (cls.word_scope == 0) & (cls.problem == problem)
+                ).gino.all()
+            )
+            await query[index].delete()
+        elif group_id:
+            await WordBank.delete.where(
+                (cls.group_id == group_id) & (cls.problem == problem)
+            ).gino.status()
+        else:
+            await WordBank.delete.where(
+                (cls.word_scope == word_scope) & (cls.problem == problem)
+            ).gino.status()
+        return True
 
     @classmethod
     async def update_group_problem(
@@ -413,24 +405,24 @@ class WordBank(db.Model):
             :param word_scope: 词条范围
         """
         if index is not None:
-            if group_id:
-                query = await cls.query.where(
+            query = (
+                await cls.query.where(
                     (cls.group_id == group_id) & (cls.problem == problem)
                 ).gino.all()
-            else:
-                query = await cls.query.where(
+                if group_id
+                else await cls.query.where(
                     (cls.word_scope == word_scope) & (cls.problem == problem)
                 ).gino.all()
+            )
             await query[index].update(problem=replace_str).apply()
+        elif group_id:
+            await WordBank.update.values(problem=replace_str).where(
+                (cls.group_id == group_id) & (cls.problem == problem)
+            ).gino.status()
         else:
-            if group_id:
-                await WordBank.update.values(problem=replace_str).where(
-                    (cls.group_id == group_id) & (cls.problem == problem)
-                ).gino.status()
-            else:
-                await WordBank.update.values(problem=replace_str).where(
-                    (cls.word_scope == word_scope) & (cls.problem == problem)
-                ).gino.status()
+            await WordBank.update.values(problem=replace_str).where(
+                (cls.word_scope == word_scope) & (cls.problem == problem)
+            ).gino.status()
 
     @classmethod
     async def get_group_all_problem(
@@ -486,7 +478,7 @@ class WordBank(db.Model):
                     q.problem,
                     image(path / q.image_path)
                     if q.image_path
-                    else f"[{int2type[q.word_type]}] " + q.problem,
+                    else f"[{int2type[q.word_type]}] {q.problem}",
                 )
                 problem_list.append(problem)
                 _tmp.append(q.problem)

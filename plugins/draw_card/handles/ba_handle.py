@@ -81,7 +81,7 @@ class BaHandle(BaseHandle[BaChar]):
         bg.paste(
             star, (img_w // 2 - 15 * (card.star - 1) // 2, img_h - star_h), alpha=True
         )
-        text = card.name[:5] + "..." if len(card.name) > 6 else card.name
+        text = f"{card.name[:5]}..." if len(card.name) > 6 else card.name
         font = load_font(fontsize=14)
         text_w, text_h = font.getsize(text)
         draw = ImageDraw.Draw(bg.markImg)
@@ -95,11 +95,7 @@ class BaHandle(BaseHandle[BaChar]):
 
     def _init_data(self):
         self.ALL_CHAR = [
-            BaChar(
-                name=value["名称"],
-                star=int(value["星级"]),
-                limited=True if "（" in key else False,
-            )
+            BaChar(name=value["名称"], star=int(value["星级"]), limited="（" in key)
             for key, value in self.load_data().items()
         ]
 

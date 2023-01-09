@@ -316,9 +316,7 @@ async def _(event: PrivateMessageEvent, arg: Message = CommandArg()):
     if isinstance(msg_list, str):
         await show_word_matcher.send(msg_list)
     else:
-        t = ""
-        for msg in msg_list:
-            t += msg + '\n'
+        t = "".join(msg + '\n' for msg in msg_list)
         await show_word_matcher.send(t[:-1])
     logger.info(
         f"(USER {event.user_id}, GROUP "

@@ -12,23 +12,21 @@ dir_path = Path(__file__).parent.absolute()
 
 def cn2py(word) -> str:
     """保存声调，防止出现类似方舟干员红与吽拼音相同声调不同导致红照片无法保存的问题"""
-    temp = ""
-    for i in pypinyin.pinyin(word, style=pypinyin.Style.TONE3):
-        temp += "".join(i)
-    return temp
+    return "".join(
+        "".join(i) for i in pypinyin.pinyin(word, style=pypinyin.Style.TONE3)
+    )
 
 
 # 移除windows和linux下特殊字符
 def remove_prohibited_str(name: str) -> str:
     if platform.system().lower() == "windows":
-        tmp = ""
-        for i in name:
-            if i not in ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]:
-                tmp += i
-        name = tmp
+        return "".join(
+            i
+            for i in name
+            if i not in ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
+        )
     else:
-        name = name.replace("/", "\\")
-    return name
+        return name.replace("/", "\\")
 
 
 def load_font(fontname: str = "msyh.ttf", fontsize: int = 16) -> FreeTypeFont:
@@ -42,7 +40,7 @@ def circled_number(num: int) -> IMG:
     text = str(num)
     text_w = font.getsize(text)[0]
     w = 240 + text_w
-    w = w if w >= 500 else 500
+    w = max(w, 500)
     img = Image.new("RGBA", (w, 500))
     draw = ImageDraw.Draw(img)
     draw.ellipse(((0, 0), (500, 500)), fill="red")

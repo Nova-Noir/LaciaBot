@@ -93,11 +93,11 @@ async def build_alc_image() -> str:
     if now.month < 10:
         month_w = 373
     elif now.month != 10:
-        month = "0" + month[-1]
+        month = f"0{month[-1]}"
     await background.atext((month_w, 145), f"{int2cn(month)}月", fill="#8d7650ff")
     day = str(now.day)
     if now.day > 10 and day[-1] != "0":
-        day = day[0] + "0" + day[-1]
+        day = f"{day[0]}0{day[-1]}"
     day_str = f"{int2cn(day)}日"
     day_w = 193
     if (n := len(day_str)) == 3:

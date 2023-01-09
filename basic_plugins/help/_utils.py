@@ -59,7 +59,7 @@ class HelpImageBuild:
         if group_id:
             help_image = GROUP_HELP_PATH / f"{group_id}.png"
         else:
-            help_image = IMAGE_PATH / f"simple_help.png"
+            help_image = IMAGE_PATH / "simple_help.png"
         build_type = Config.get_config("help", "TYPE")
         if build_type == "HTML":
             byt = await self.build_html_image(group_id)
@@ -119,7 +119,7 @@ class HelpImageBuild:
             plugin_list.append(data)
         del plugin_list[flag_index]
         plugin_list.insert(0, max_data)
-        pic = await template_to_pic(
+        return await template_to_pic(
             template_path=str((TEMPLATE_PATH / "menu").absolute()),
             template_name="zhenxun_menu.html",
             templates={"plugin_list": plugin_list},
@@ -129,7 +129,6 @@ class HelpImageBuild:
             },
             wait=2,
         )
-        return pic
 
     async def build_pil_image(self, group_id: Optional[int]) -> BuildImage:
         """
@@ -152,7 +151,7 @@ class HelpImageBuild:
                 sum_height = 50 * len(plugin_list) + 10
             else:
                 sum_height = (font_size + 6) * len(plugin_list) + 10
-            max_width = max([x[0] for x in wh_list]) + 20
+            max_width = max(x[0] for x in wh_list) + 20
             bk = BuildImage(
                 max_width + 40,
                 sum_height + 50,
@@ -166,7 +165,7 @@ class HelpImageBuild:
                 max_width + 40,
                 sum_height,
                 font_size=font_size,
-                color="white" if not idx % 2 else "black",
+                color="black" if idx % 2 else "white",
             )
             curr_h = 10
             for i, plugin_data in enumerate(plugin_list):
@@ -194,7 +193,7 @@ class HelpImageBuild:
                     name_image = await self.build_name_image(
                         max_width,
                         plugin_data.name,
-                        "black" if not idx % 2 else "white",
+                        "white" if idx % 2 else "black",
                         text_color,
                         pos,
                     )

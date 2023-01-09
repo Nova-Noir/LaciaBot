@@ -70,20 +70,17 @@ def _(type_: Optional[str], user: User = Depends(token_to_user)) -> Result:
                 if x := plugins2count_manager.get(model):
                     data["count_limit"] = CountLimit(**x.dict())
                 if x := Config.get(model):
-                    id_ = 0
-                    tmp = []
-                    for key in x.keys():
-                        tmp.append(
-                            PluginConfig(
-                                **{
-                                    "key": key,
-                                    "help_": x[key].get("help"),
-                                    "id": id_,
-                                    **x[key],
-                                }
-                            )
+                    tmp = [
+                        PluginConfig(
+                            **{
+                                "key": key,
+                                "help_": x[key].get("help"),
+                                "id": id_,
+                                **x[key],
+                            }
                         )
-                        id_ += 1
+                        for id_, key in enumerate(x.keys())
+                    ]
                     data["plugin_config"] = tmp
                 plugin_list.append(Plugin(**data))
             except (AttributeError, ValidationError) as e:
@@ -113,8 +110,9 @@ def _(plugin: Plugin, user: User = Depends(token_to_user)) -> Result:
                 if not c.value:
                     Config.set_config(plugin.model, c.key, None)
                     continue
-                if str(c.value).lower() in ["true", "false"] and (
-                    c.default_value is None or isinstance(c.default_value, bool)
+                if str(c.value).lower() in {"true", "false"} and (
+                    c.default_value is None
+                    or isinstance(c.default_value, bool)
                 ):
                     c.value = str(c.value).lower() == "true"
                 elif isinstance(
@@ -131,15 +129,14 @@ def _(plugin: Plugin, user: User = Depends(token_to_user)) -> Result:
                 ):
                     default_value = Config.get_config(plugin.model, c.key, c.value)
                     c.value = c.value.split(",")
-                    if default_value and isinstance(default_value[0], int):
-                        c.value = [int(x) for x in c.value]
-                    elif default_value and isinstance(default_value[0], float):
-                        c.value = [float(x) for x in c.value]
-                    elif default_value and isinstance(default_value[0], bool):
-                        temp = []
-                        for x in c.value:
-                            temp.append(x.lower() == "true")
-                        c.value = temp
+                    if default_value:
+                        if isinstance(default_value[0], int):
+                            c.value = [int(x) for x in c.value]
+                        elif isinstance(default_value[0], float):
+                            c.value = [float(x) for x in c.value]
+                        elif isinstance(default_value[0], bool):
+                            temp = [x.lower() == "true" for x in c.value]
+                            c.value = temp
                 Config.set_config(plugin.model, c.key, c.value)
             Config.save(None, True)
         else:

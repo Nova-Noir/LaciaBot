@@ -190,7 +190,7 @@ async def get_plugin_name(name: int) -> Tuple[str, int]:
     通过下标获取插件名
     :param name: 下标
     """
-    name = int(name)
+    name = name
     if not data:
         await show_plugin_repo()
     if name < 1 or name > len(data.keys()):
