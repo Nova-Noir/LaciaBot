@@ -123,10 +123,7 @@ async def _(
             # print(_prefix_count_dict)
             if group_id != "total":
                 for data in [_prefix_count_dict, _prefix_user_count_dict]:
-                    if data == _prefix_count_dict:
-                        key = group_id
-                    else:
-                        key = user_id
+                    key = group_id if data == _prefix_count_dict else user_id
                     data["total_statistics"][key][plugin_name] += 1
                     data["day_statistics"][key][plugin_name] += 1
                     data["week_statistics"][key][str(day_index % 7)][plugin_name] += 1
@@ -140,10 +137,7 @@ async def _(
 def check_exists_key(group_id: str, user_id: str, plugin_name: str):
     global _prefix_count_dict, _prefix_user_count_dict
     for data in [_prefix_count_dict, _prefix_user_count_dict]:
-        if data == _prefix_count_dict:
-            key = group_id
-        else:
-            key = user_id
+        key = group_id if data == _prefix_count_dict else user_id
         if not data["total_statistics"]["total"].get(plugin_name):
             data["total_statistics"]["total"][plugin_name] = 0
         if not data["day_statistics"]["total"].get(plugin_name):

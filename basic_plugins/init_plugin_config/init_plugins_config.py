@@ -129,8 +129,7 @@ def _replace_config():
                 plugin_data = Config.get(plugin)
                 for x in list(Config.get(plugin).keys()):
                     try:
-                        _x = plugin_data[x].get("name")
-                        if _x:
+                        if _x := plugin_data[x].get("name"):
                             plugin_name = _x
                     except AttributeError:
                         pass

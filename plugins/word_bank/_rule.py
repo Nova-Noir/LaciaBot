@@ -16,7 +16,7 @@ async def check(bot: Bot, event: MessageEvent, state: T_State) -> bool:
     img = get_message_img(event.message)
     at = get_message_at(event.message)
     problem = text
-    if not text and len(img) == 1:
+    if not problem and len(img) == 1:
         try:
             r = await AsyncHttpx.get(img[0])
             problem = str(imagehash.average_hash(Image.open(BytesIO(r.content))))
@@ -30,13 +30,12 @@ async def check(bot: Bot, event: MessageEvent, state: T_State) -> bool:
             elif seg.type == 'text':
                 temp += seg.data["text"]
         problem = temp
-    if event.to_me and bot.config.nickname:
-        if str(event.original_message).startswith("[CQ:at"):
-            problem = f"[at:{bot.self_id}]" + problem
-        else:
-            if problem and bot.config.nickname:
-                nickname = [nk for nk in bot.config.nickname if str(event.original_message).startswith(nk)]
-                problem = nickname[0] + problem if nickname else problem
+    if str(event.original_message).startswith("[CQ:at"):
+        if event.to_me and bot.config.nickname:
+            problem = f"[at:{bot.self_id}]{problem}"
+    elif event.to_me and bot.config.nickname and problem:
+        nickname = [nk for nk in bot.config.nickname if str(event.original_message).startswith(nk)]
+        problem = nickname[0] + problem if nickname else problem
     if problem and (await WordBank.check(event, problem) is not None):
         state["problem"] = problem
         return True

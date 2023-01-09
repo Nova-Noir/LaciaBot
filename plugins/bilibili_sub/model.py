@@ -80,26 +80,20 @@ class BilibiliSub(db.Model):
                     sub_id=sub_id, sub_type=sub_type, sub_users=sub_user
                 )
                 await sub.update(
-                    live_short_id=live_short_id
-                    if live_short_id
-                    else sub.live_short_id,
-                    live_status=live_status if live_status else sub.live_status,
+                    live_short_id=live_short_id or sub.live_short_id,
+                    live_status=live_status or sub.live_status,
                     dynamic_upload_time=dynamic_upload_time
-                    if dynamic_upload_time
-                    else sub.dynamic_upload_time,
-                    uid=uid if uid else sub.uid,
-                    uname=uname if uname else sub.uname,
+                    or sub.dynamic_upload_time,
+                    uid=uid or sub.uid,
+                    uname=uname or sub.uname,
                     latest_video_created=latest_video_created
-                    if latest_video_created
-                    else sub.latest_video_created,
+                    or sub.latest_video_created,
                     season_update_time=season_update_time
-                    if season_update_time
-                    else sub.season_update_time,
+                    or sub.season_update_time,
                     season_current_episode=season_current_episode
-                    if season_current_episode
-                    else sub.season_current_episode,
-                    season_id=season_id if season_id else sub.season_id,
-                    season_name=season_name if season_name else sub.season_name,
+                    or sub.season_current_episode,
+                    season_id=season_id or sub.season_id,
+                    season_name=season_name or sub.season_name,
                 ).apply()
             return True
         except Exception as e:
@@ -250,8 +244,8 @@ class BilibiliSub(db.Model):
         for x in query:
             if x.sub_type == "live":
                 live_data.append(x)
-            if x.sub_type == "up":
-                up_data.append(x)
-            if x.sub_type == "season":
+            elif x.sub_type == "season":
                 season_data.append(x)
+            elif x.sub_type == "up":
+                up_data.append(x)
         return live_data, up_data, season_data

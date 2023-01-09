@@ -47,7 +47,6 @@ use_props = on_command(r"使用道具", priority=5, block=True, permission=GROUP
 async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
     msg = arg.extract_plain_text()
     num = 1
-    text = ""
     prop_n = None
     index = None
     split = msg.split()
@@ -61,8 +60,7 @@ async def _(bot: Bot, event: GroupMessageEvent, arg: Message = CommandArg()):
             index = 2
     else:
         await use_props.finish("缺少参数，请查看帮助", at_sender=True)
-    if index:
-        text = " ".join(split[index:])
+    text = " ".join(split[index:]) if index else ""
     property_ = await BagUser.get_property(event.user_id, event.group_id, True)
     if property_:
         name = None

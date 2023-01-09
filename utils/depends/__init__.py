@@ -31,12 +31,10 @@ def AdminCheck(level: Optional[int] = None):
         user_level = await LevelUser.get_user_level(event.user_id, event.group_id)
         if level is None:
             if user_level < plugin_level:
-                await matcher.finish(
-                    at(event.user_id) + f"你的权限不足喔，该功能需要的权限等级：{plugin_level}"
-                )
+                await matcher.finish(f"{at(event.user_id)}你的权限不足喔，该功能需要的权限等级：{plugin_level}")
         else:
             if user_level < level:
-                await matcher.finish(at(event.user_id) + f"你的权限不足喔，该功能需要的权限等级：{level}")
+                await matcher.finish(f"{at(event.user_id)}你的权限不足喔，该功能需要的权限等级：{level}")
 
     return Depends(dependency)
 
@@ -51,7 +49,7 @@ def CostGold(gold: int):
 
     async def dependency(matcher: Matcher, event: GroupMessageEvent):
         if (await BagUser.get_gold(event.user_id, event.group_id)) < gold:
-            await matcher.finish(at(event.user_id) + f"金币不足..该功能需要{gold}金币..")
+            await matcher.finish(f"{at(event.user_id)}金币不足..该功能需要{gold}金币..")
         await BagUser.spend_gold(event.user_id, event.group_id, gold)
         await UserShopGoldLog.add_shop_log(
             event.user_id, event.group_id, 2, matcher.plugin_name, gold, 1

@@ -110,7 +110,7 @@ class PluginsManager(StaticData[Plugin]):
         if module in self._data.keys():
             if self._data[module].block_type == "all" and block_type == "all":
                 return False
-            return not self._data[module].block_type == block_type
+            return self._data[module].block_type != block_type
         return True
 
     def get_plugin_block_type(self, module: str) -> Optional[str]:
@@ -150,18 +150,17 @@ class PluginsManager(StaticData[Plugin]):
             :param group_id: 群组
             :param block_type: 限制类型
         """
-        if module:
-            if group_id:
-                if status == "block":
-                    group_manager.block_plugin(f"{module}:super", int(group_id))
-                else:
-                    group_manager.unblock_plugin(f"{module}:super", int(group_id))
+        if not module:
+            return
+        if group_id:
+            if status == "block":
+                group_manager.block_plugin(f"{module}:super", int(group_id))
             else:
-                if status == "block":
-                    self._data[module].status = False
-                    self._data[module].block_type = block_type
-                else:
-                    if module in self._data.keys():
-                        self._data[module].status = True
-                        self._data[module].block_type = None
-            self.save()
+                group_manager.unblock_plugin(f"{module}:super", int(group_id))
+        elif status == "block":
+            self._data[module].status = False
+            self._data[module].block_type = block_type
+        elif module in self._data.keys():
+            self._data[module].status = True
+            self._data[module].block_type = None
+        self.save()

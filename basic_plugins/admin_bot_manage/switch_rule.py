@@ -73,39 +73,37 @@ async def _(bot: Bot, event: MessageEvent):
     if isinstance(event, GroupMessageEvent):
         await switch_rule_matcher.send(await change_group_switch(_cmd, event.group_id))
         logger.info(f"USER {event.user_id} GROUP {event.group_id} 使用群功能管理命令 {_cmd}")
-    else:
-        if str(event.user_id) in bot.config.superusers:
-            block_type = " ".join(get_message_text(event.json()).split()[1:])
-            block_type = block_type if block_type else "a"
-            if ("关闭被动" in _cmd or "开启被动" in _cmd) and isinstance(event, PrivateMessageEvent):
-                await switch_rule_matcher.send(change_global_task_status(_cmd))
-            elif is_number(block_type):
-                if not int(block_type) in [
-                    g["group_id"]
-                    for g in await bot.get_group_list()
-                ]:
-                    await switch_rule_matcher.finish(f"{NICKNAME}未加入群聊：{block_type}")
-                await change_group_switch(_cmd, int(block_type), True)
-                group_name = (await bot.get_group_info(group_id=int(block_type)))[
-                    "group_name"
-                ]
-                await switch_rule_matcher.send(
-                    f"已{_cmd[:2]}群聊 {group_name}({block_type}) 的 {_cmd[2:]} 功能"
-                )
-            elif block_type in ["all", "private", "group", "a", "p", "g"]:
-                block_type = "all" if block_type == "a" else block_type
-                block_type = "private" if block_type == "p" else block_type
-                block_type = "group" if block_type == "g" else block_type
-                set_plugin_status(_cmd, block_type)
-                if block_type == "all":
-                    await switch_rule_matcher.send(f"已{_cmd[:2]}功能：{_cmd[2:]}")
-                elif block_type == "private":
-                    await switch_rule_matcher.send(f"已在私聊中{_cmd[:2]}功能：{_cmd[2:]}")
-                else:
-                    await switch_rule_matcher.send(f"已在群聊中{_cmd[:2]}功能：{_cmd[2:]}")
+    elif str(event.user_id) in bot.config.superusers:
+        block_type = " ".join(get_message_text(event.json()).split()[1:])
+        block_type = block_type or "a"
+        if ("关闭被动" in _cmd or "开启被动" in _cmd) and isinstance(event, PrivateMessageEvent):
+            await switch_rule_matcher.send(change_global_task_status(_cmd))
+        elif is_number(block_type):
+            if int(block_type) not in [
+                g["group_id"] for g in await bot.get_group_list()
+            ]:
+                await switch_rule_matcher.finish(f"{NICKNAME}未加入群聊：{block_type}")
+            await change_group_switch(_cmd, int(block_type), True)
+            group_name = (await bot.get_group_info(group_id=int(block_type)))[
+                "group_name"
+            ]
+            await switch_rule_matcher.send(
+                f"已{_cmd[:2]}群聊 {group_name}({block_type}) 的 {_cmd[2:]} 功能"
+            )
+        elif block_type in ["all", "private", "group", "a", "p", "g"]:
+            block_type = "all" if block_type == "a" else block_type
+            block_type = "private" if block_type == "p" else block_type
+            block_type = "group" if block_type == "g" else block_type
+            set_plugin_status(_cmd, block_type)
+            if block_type == "all":
+                await switch_rule_matcher.send(f"已{_cmd[:2]}功能：{_cmd[2:]}")
+            elif block_type == "private":
+                await switch_rule_matcher.send(f"已在私聊中{_cmd[:2]}功能：{_cmd[2:]}")
             else:
-                await switch_rule_matcher.finish("格式错误：关闭[功能] [group]/[p/g]")
-            logger.info(f"USER {event.user_id} 使用功能管理命令 {_cmd} | {block_type}")
+                await switch_rule_matcher.send(f"已在群聊中{_cmd[:2]}功能：{_cmd[2:]}")
+        else:
+            await switch_rule_matcher.finish("格式错误：关闭[功能] [group]/[p/g]")
+        logger.info(f"USER {event.user_id} 使用功能管理命令 {_cmd} | {block_type}")
 
 
 @plugins_status.handle()

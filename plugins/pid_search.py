@@ -36,8 +36,7 @@ pid_search = on_command("p搜", aliases={"pixiv搜", "P搜"}, priority=5, block=
 
 @pid_search.handle()
 async def _h(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
-    pid = arg.extract_plain_text().strip()
-    if pid:
+    if pid := arg.extract_plain_text().strip():
         state["pid"] = pid
 
 
@@ -51,7 +50,7 @@ headers = {
 @pid_search.got("pid", prompt="需要查询的图片PID是？")
 async def _g(event: MessageEvent, state: T_State, pid: str = Arg("pid")):
     url = Config.get_config("hibiapi", "HIBIAPI") + "/api/pixiv/illust"
-    if pid in ["取消", "算了"]:
+    if pid in {"取消", "算了"}:
         await pid_search.finish("已取消操作...")
     if not is_number(pid):
         await pid_search.reject_arg("pid", "笨蛋，重新输入数！字！")
@@ -82,8 +81,10 @@ async def _g(event: MessageEvent, state: T_State, pid: str = Arg("pid")):
             try:
                 image_list.append(data["meta_single_page"]["original_image_url"])
             except KeyError:
-                for image_url in data["meta_pages"]:
-                    image_list.append(image_url["image_urls"]["original"])
+                image_list.extend(
+                    image_url["image_urls"]["original"]
+                    for image_url in data["meta_pages"]
+                )
             for i, img_url in enumerate(image_list):
                 img_url = change_pixiv_image_links(img_url)
                 if not await AsyncHttpx.download_file(
