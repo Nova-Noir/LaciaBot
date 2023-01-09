@@ -43,6 +43,7 @@ ai = on_message(rule=to_me(), priority=998)
 
 @ai.handle()
 async def _(bot: Bot, event: MessageEvent):
+    return
     msg = get_message_text(event.json())
     img = get_message_img(event.json())
     if "CQ:xml" in str(event.get_message()):

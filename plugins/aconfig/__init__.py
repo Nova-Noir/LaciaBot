@@ -20,19 +20,6 @@ __plugin_author__ = 'HibiKier'
 _flmt = FreqLimiter(300)
 
 
-config_play_game = on_keyword({"打游戏"}, permission=GROUP, priority=1, block=True)
-
-
-@config_play_game.handle()
-async def _(event: GroupMessageEvent):
-    if not _flmt.check(event.group_id):
-        return
-    _flmt.start_cd(event.group_id)
-    await config_play_game.finish(
-        image(random.choice(os.listdir(IMAGE_PATH / "dayouxi")), "dayouxi")
-    )
-
-
 self_introduction = on_command(
     "自我介绍", aliases={"介绍", "你是谁", "你叫什么"}, rule=to_me(), priority=5, block=True
 )

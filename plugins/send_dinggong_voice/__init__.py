@@ -36,6 +36,7 @@ dg_voice = on_keyword({"骂"}, rule=to_me(), priority=5, block=True)
 
 @dg_voice.handle()
 async def _(bot: Bot, event: MessageEvent, state: T_State):
+    return
     if len(str((event.get_message()))) > 1:
         voice = random.choice(os.listdir(RECORD_PATH / "dinggong"))
         result = record(voice, "dinggong")
