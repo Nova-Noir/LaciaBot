@@ -122,30 +122,29 @@ async def _(
     cmd: Tuple[str, ...] = Command(),
     arg: Message = CommandArg(),
 ):
-    cmd = cmd[0]
-    msg = arg.extract_plain_text().strip()
-    if msg:
-        if str(event.user_id) in bot.config.superusers:
-            msg_splt = msg.split()
-            if is_number(msg_splt[0]):
-                qq = int(msg_splt[0])
-                msg = msg_splt[1:]
-                if cmd in [".ban", "/ban"]:
-                    time = parse_ban_time(" ".join(msg))
-                    if isinstance(time, str):
-                        await ban.finish(time)
-                    result = await a_ban(qq, time, str(qq), event, 9)
-                else:
-                    if await BanUser.unban(qq):
-                        logger.info(f"USER {event.user_id} 将 USER {qq} 解禁")
-                        result = f"已经把 {qq} 从黑名单中删除了！"
-                    else:
-                        result = f"{qq} 不在黑名单！"
-                await ban.send(result)
+    if not (msg := arg.extract_plain_text().strip()):
+        return
+    if str(event.user_id) in bot.config.superusers:
+        msg_splt = msg.split()
+        if is_number(msg_splt[0]):
+            qq = int(msg_splt[0])
+            msg = msg_splt[1:]
+            cmd = cmd[0]
+            if cmd in [".ban", "/ban"]:
+                time = parse_ban_time(" ".join(msg))
+                if isinstance(time, str):
+                    await ban.finish(time)
+                result = await a_ban(qq, time, str(qq), event, 9)
+            elif await BanUser.unban(qq):
+                logger.info(f"USER {event.user_id} 将 USER {qq} 解禁")
+                result = f"已经把 {qq} 从黑名单中删除了！"
             else:
-                await ban.finish(
-                    "qq号必须是数字！\n格式：.ban [qq] [hour]? [minute]?", at_sender=True
-                )
+                result = f"{qq} 不在黑名单！"
+            await ban.send(result)
+        else:
+            await ban.finish(
+                "qq号必须是数字！\n格式：.ban [qq] [hour]? [minute]?", at_sender=True
+            )
 
 
 @super_ban.handle()

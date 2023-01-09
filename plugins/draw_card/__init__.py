@@ -181,8 +181,8 @@ games = (
 def create_matchers():
     def draw_handler(game: Game) -> T_Handler:
         async def handler(
-            matcher: Matcher, event: MessageEvent, args: Tuple[Any, ...] = RegexGroup()
-        ):
+                    matcher: Matcher, event: MessageEvent, args: Tuple[Any, ...] = RegexGroup()
+                ):
             pool_name, pool_type_, num, unit = args
             if num == "单":
                 num = 1
@@ -206,7 +206,7 @@ def create_matchers():
             )
             try:
                 if pool_type_ in ["2池", "二池"]:
-                    pool_name = pool_name + "1"
+                    pool_name = f"{pool_name}1"
                 res = game.handle.draw(num, pool_name=pool_name, user_id=event.user_id)
             except:
                 logger.warning(traceback.format_exc())
@@ -284,10 +284,11 @@ create_matchers()
     minute=1,
 )
 async def _():
-    tasks = []
-    for game in games:
-        if game.flag:
-            tasks.append(asyncio.ensure_future(game.handle.update_info()))
+    tasks = [
+        asyncio.ensure_future(game.handle.update_info())
+        for game in games
+        if game.flag
+    ]
     await asyncio.gather(*tasks)
 
 

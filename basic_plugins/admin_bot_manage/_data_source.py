@@ -51,8 +51,8 @@ async def group_current_status(group_id: int) -> str:
         await bk.atext((name_image.w + 100, 10), "全局")
         await bk.apaste(b_icon, (name_image.w + 130, 0), True)
         image_list.append(bk)
-    w = max([x.w for x in image_list])
-    h = sum([x.h + 10 for x in image_list])
+    w = max(x.w for x in image_list)
+    h = sum(x.h + 10 for x in image_list)
     A = BuildImage(w + 20, h + 70, font_size=30, color=(119, 97, 177))
     await A.atext((15, 20), "群被动状态")
     curr_h = 75
@@ -90,7 +90,7 @@ async def custom_group_welcome(
             pass
     try:
         if msg:
-            data[str(group_id)] = str(msg)
+            data[str(group_id)] = msg
             json.dump(
                 data, open(custom_welcome_msg_json, "w"), indent=4, ensure_ascii=False
             )
@@ -105,7 +105,7 @@ async def custom_group_welcome(
     except Exception as e:
         logger.error(f"GROUP {group_id} 替换群消息失败 e:{e}")
         return "替换群消息失败.."
-    return f"替换群欢迎消息成功：\n{result}" + img_result
+    return f"替换群欢迎消息成功：\n{result}{img_result}"
 
 
 task_data = None
@@ -259,7 +259,7 @@ def _get_plugin_status() -> MessageSegment:
             tmp_name.append(matcher.plugin_name)
             module = matcher.plugin_name
             flag = plugins_manager.get_plugin_block_type(module)
-            flag = flag.upper() + " CLOSE" if flag else "OPEN"
+            flag = f"{flag.upper()} CLOSE" if flag else "OPEN"
             try:
                 plugin_name = plugins_manager.get(module).plugin_name
                 if (
@@ -357,9 +357,7 @@ async def update_member_info(group_id: int, remind_superuser: bool = False) -> b
             else:
                 logger.info(f"退群用户{del_user} 所属{group_id} 删除失败")
     if _error_member_list and remind_superuser:
-        result = ""
-        for error_user in _error_member_list:
-            result += error_user
+        result = "".join(_error_member_list)
         await bot.send_private_msg(
             user_id=int(list(bot.config.superusers)[0]), message=result[:-1]
         )
