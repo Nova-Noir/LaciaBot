@@ -1,10 +1,11 @@
 from configs.config import HIDDEN_USER
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, ActionFailed
-from nonebot.params import CommandArg
+from nonebot.adapters.onebot.v11 import ActionFailed, GroupMessageEvent, Message
 from nonebot.adapters.onebot.v11.permission import GROUP
-from utils.data_utils import init_rank
+from nonebot.params import CommandArg
+
 from models.bag_user import BagUser
+from utils.data_utils import init_rank
 from utils.image_utils import text2image
 from utils.message_builder import image
 from utils.utils import is_number
@@ -40,7 +41,9 @@ async def _(event: GroupMessageEvent):
     try:
         await my_gold.send(msg)
     except ActionFailed:
-        await my_gold.send(image(b64=(await text2image(msg, color="#f9f6f2", padding=10)).pic2bs4()))
+        await my_gold.send(
+            image(b64=(await text2image(msg, color="#f9f6f2", padding=10)).pic2bs4())
+        )
 
 
 @gold_rank.handle()
@@ -50,7 +53,7 @@ async def _(event: GroupMessageEvent, arg: Message = CommandArg()):
         num = int(num)
     else:
         num = 10
-    all_users = await BagUser.get_all_users(event.group_id)
+    all_users = await BagUser.filter(group_id=event.group_id)
     all_user_id = [user.user_qq for user in all_users]
     all_user_data = [user.gold for user in all_users]
     for user_qq in HIDDEN_USER:
